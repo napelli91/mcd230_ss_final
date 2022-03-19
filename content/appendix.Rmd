@@ -1,0 +1,14 @@
+This is an appendix section. In here we will add some random graphics and explanations
+that basically nobody cares but you are proud of them.
+
+```{r appendix-plot}
+library(ggplot2)
+library(dplyr)
+
+
+trees %>% 
+  ggplot(aes(x = Girth, y = Volume)) +
+  geom_point()
+```
+
+that's it. This was how to appendix 101
