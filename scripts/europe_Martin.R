@@ -29,26 +29,31 @@ lat_range = c(49.0 , 59.0)
 
 csv_loc = "data/europe-temp/europe_temp_spring_1989.csv"
 data <- read.csv(csv_loc)
-data_clean <- filter(data, Latitude>49&Latitude<59,Longitude>-10.5&Longitude<1.9)
-table(data_clean$X1989_Primavera == -999.99) ["TRUE"]
-data_clean <- filter(data_clean,X1989_Primavera != -999.99)
 
-datos_sf <- sf::st_as_sf(data_clean, coords = c("Longitude", "Latitude"), crs = "4326")
-View(datos)
-plot(datos)
+data <- data %>% dplyr::select(-X)
+names(data) <- c('lat', 'lon', 'temp' )
 
-mapview(datos_geo,
-        zcol = "X1989_Primavera",
+data_clean <- filter(data, lat>49&lat<59,lon>-10.5&lon<1.9)
+table(data_clean$temp == -999.99) ["TRUE"]
+data_clean <- filter(data_clean,temp != -999.99)
+
+datos_sf <- sf::st_as_sf(data_clean, coords = c("lon", "lat"), crs = "4267")
+View(data_clean)
+plot(data_clean)
+plot(datos_sf)
+mapview(datos_sf,
+        zcol = "temp",
         alpha.regions = 0.5,
-        col.regions = terrain.colors)
+        col.regions = terrain.colors,
+        native.crs=TRUE)
 
 # Histograma de los datos
-hist(datos$X1989_Primavera,col='red',nclass=15,main="Histograma",ylab='Frecuencia Relativa',xlab='Temperatura')
+hist(data_clean$temp,col='red',nclass=15,main="Histograma",ylab='Frecuencia Relativa',xlab='Temperatura')
 
 #box-plot de los datos
-boxplot(datos$X1989_Primavera,col='green',ylab='Temperatura',main="Box-Plot")
+boxplot(data_clean$temp,col='green',ylab='Temperatura',main="Box-Plot")
 #first approach
-data_geo <-cbind(data_clean$Longitude,data_clean$Latitude,data_clean$X1989_Primavera)
+data_geo <-cbind(data_clean$lon,data_clean$lat,data_clean$temp)
 vg<-as.geodata(data_geo)
 plot(vg)
 #Se ve cierta dependencia de Y, latitud lo cual tiene sentido. Parecería ser una distrución normal
@@ -71,14 +76,15 @@ ML <- localmoran(vg$data,pesos,alternative ="less")
 IML<-printCoefmat(data.frame(ML,row.names=data_clean$Casos),check.names=FALSE)
 
 data_clean_sp <- data_clean
-coordinates(data_clean_sp) = ~Longitude+Latitude
+coordinates(data_clean_sp) = ~lon+lat
 
 nube_clasica <- variog(vg, option = "cloud")
 bin_clasico <- variog(vg, uvec=seq(0,10,l=12))
 plot(nube_clasica, main = "classical estimator")
+
 plot(bin_clasico)
 
-v <- variogram(X1989_Primavera~1, data_clean_sp)
+v <- variogram(temp~1, data_clean_sp)
 plot(v)
 
 # Ahora con el modelo esf?rico, sin tendencia
