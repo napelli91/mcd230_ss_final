@@ -1,26 +1,15 @@
-print("esto es una prueba")
-
 #Para que funcione el mapa
-library(udunits2)
-library(sf)
-library(geoR)
-library(mapview)
-library(leaflet)
-library(RColorBrewer)
-library(lattice)
-library(spdep)
-library(rgdal)
-library(sp)
-library(gstat)
-library(dplyr)
-library(ggplot2)
-library(readr)
-library(PerformanceAnalytics)
-library(ggmap)
-library(tibble)
-library(caret)
-library(units)
 
+library(dplyr)
+library(geoR)
+library(ggplot2)
+library(gstat)
+library(mapview)
+library(rgdal)
+library(readr)
+library(sf)
+library(sp)
+library(spdep)
 
 #####EDA#####
 ## Leemos el dataset inicial y separamos las lat y lon
@@ -47,11 +36,27 @@ mapview(datos_sf,
         col.regions = terrain.colors,
         native.crs=TRUE)
 
+data(world)
+uk_map <- world %>% filter(name_long == 'United Kingdom') %>% dplyr::select(geom)
+
+ggplot() +
+    geom_sf(data = uk_map$geom) +
+    geom_point(data = data_clean,
+               aes(x = lon,
+                   y = lat,
+                   color = temp
+               ),
+               alpha = .5) +
+    coord_sf(datum=st_crs(4326))
+
+old_par = mfrow=c(1,1)
+par(mfrow=c(1,2))
 # Histograma de los datos
 hist(data_clean$temp,col='red',nclass=15,main="Histograma",ylab='Frecuencia Relativa',xlab='Temperatura')
-
 #box-plot de los datos
 boxplot(data_clean$temp,col='green',ylab='Temperatura',main="Box-Plot")
+
+par(mfrow=c(1,1))
 #first approach
 data_geo <-cbind(data_clean$lon,data_clean$lat,data_clean$temp)
 vg<-as.geodata(data_geo)
@@ -79,16 +84,21 @@ data_clean_sp <- data_clean
 coordinates(data_clean_sp) = ~lon+lat
 
 nube_clasica <- variog(vg, option = "cloud")
-bin_clasico <- variog(vg, uvec=seq(0,10,l=12))
 plot(nube_clasica, main = "classical estimator")
 
+vg.map <- variogram(temp~1, data_clean_sp, cutoff = 8, width = 1, map = T)
+plot(vg.map)
+
+bin_clasico <- variog(vg, uvec=seq(0,10,l=12))
 plot(bin_clasico)
 
 v <- variogram(temp~1, data_clean_sp)
 plot(v)
 
 # Ahora con el modelo esf?rico, sin tendencia
-vt_sph = fit.variogram(v, vgm(16, "Sph", 1500, 4))
+
+res1.v.ef=eyefit(bin_clasico)
+vt_sph = fit.variogram(v, vgm(0, "Sph", 1.5, 0.5))
 vt_sph
 plot(v , vt_sph)
 

@@ -5,8 +5,8 @@ library(ggmap)
 library(raster)
 library(geoR)
 library(sf)
-
-devtools::install_github("paleolimbot/ggspatial")
+library(spData)
+#devtools::install_github("paleolimbot/ggspatial")
 
 ## Leemos el dataset inicial
 # -6.7604, 2.2474,
@@ -78,3 +78,11 @@ ggplot() +
 
 ## Hay un problema con la forma de datos entre el mapa y las temp (hay q pasar la longitud
 ## a sexagesimal que tenga en vez de 49.5 a 49° 30' 00''N)
+
+
+## genero grilla de datos para geodata
+
+
+data_geo <-cbind(sliced_data$lon,sliced_data$lat,sliced_data$temp)
+vg<-as.geodata(data_geo)
+plot(vg)
