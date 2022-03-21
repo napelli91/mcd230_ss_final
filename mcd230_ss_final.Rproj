@@ -14,10 +14,3 @@ LaTeX: pdfLaTeX
 
 AutoAppendNewline: Yes
 StripTrailingWhitespace: Yes
-LineEndingConversion: Posix
-
-MarkdownWrap: Column
-MarkdownWrapAtColumn: 140
-MarkdownReferences: Section
-
-SpellingDictionary: es_ES
