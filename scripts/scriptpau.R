@@ -32,4 +32,4 @@ plot(v_map)
 #4267
 
 #data_clean <- filter(df, Latitude>-83.98&Latitude<-79.51,Longitude>24.98&Longitude<31.55)
-#esto me dice que no encuentra longitude
+#esto me dice que no encuentra longitude nidea
