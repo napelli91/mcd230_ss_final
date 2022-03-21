@@ -92,18 +92,17 @@ plot(vg.map)
 bin_clasico <- variog(vg, uvec=seq(0,10,l=12))
 plot(bin_clasico)
 
+v <- variogram(temp~1, data_clean_sp, cutoff=3, width=0.5, map=T)
+plot(v)
 v <- variogram(temp~1, data_clean_sp)
 plot(v)
 
-# Ahora con el modelo esf?rico, sin tendencia
-
+# eyefit para ver como da
 res1.v.ef=eyefit(bin_clasico)
-vt_sph = fit.variogram(v, vgm(0, "Sph", 1.5, 0.5))
-vt_sph
-plot(v , vt_sph)
 
-# Comparo los modelos. Calculo la Suma de cuadrado del error
-# para cada uno de los modelos ajustados
-attr(vt_exp, 'SSErr')
-attr(vt_sph, 'SSErr')
+v4_sel = fit.variogram(v, vgm(5, c("Exp", "Sph" ,"Gau" ,"Mat"), 8, 0))
+v4_sel
+plot(v , v4_sel)
+attr(v4_sel, 'SSErr')
+
 
