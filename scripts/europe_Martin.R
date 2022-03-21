@@ -1,14 +1,32 @@
 print("esto es una prueba")
 
-
 library(geoR)
-data(elevation)
-class(elevation)
+library(mapview)
+library(leaflet)
+library(RColorBrewer)
 library(lattice)
 library(spdep)
 library(rgdal)
 library(sp)
 library(gstat)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(PerformanceAnalytics)
+library(ggmap)
+library(tibble)
+library(caret)
+
+## Leemos el dataset inicial y separamos las lat y lon
+lon_range = c(-10.5 , 1.9)
+lat_range = c(49.0 , 59.0)
+
+csv_loc = "data/europe-temp/europe_temp_spring_1989.csv"
+data <- read.csv(csv_loc)
+data_clean <- filter(data, Latitude>49&Latitude<59,Longitude>-10.5&Longitude<1.9)
+
+data_geo <- st_as_sf()
+
 
 
 # Histograma de los datos
