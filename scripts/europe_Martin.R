@@ -1,5 +1,8 @@
 print("esto es una prueba")
 
+#Para que funcione el mapa
+library(udunits2)
+library(sf)
 library(geoR)
 library(mapview)
 library(leaflet)
@@ -16,7 +19,10 @@ library(PerformanceAnalytics)
 library(ggmap)
 library(tibble)
 library(caret)
+library(units)
 
+
+#####EDA#####
 ## Leemos el dataset inicial y separamos las lat y lon
 lon_range = c(-10.5 , 1.9)
 lat_range = c(49.0 , 59.0)
@@ -24,65 +30,56 @@ lat_range = c(49.0 , 59.0)
 csv_loc = "data/europe-temp/europe_temp_spring_1989.csv"
 data <- read.csv(csv_loc)
 data_clean <- filter(data, Latitude>49&Latitude<59,Longitude>-10.5&Longitude<1.9)
+table(data_clean$X1989_Primavera == -999.99) ["TRUE"]
+data_clean <- filter(data_clean,X1989_Primavera != -999.99)
 
-data_geo <- st_as_sf()
+datos_sf <- sf::st_as_sf(data_clean, coords = c("Longitude", "Latitude"), crs = "4326")
+View(datos)
+plot(datos)
 
-
+mapview(datos_geo,
+        zcol = "X1989_Primavera",
+        alpha.regions = 0.5,
+        col.regions = terrain.colors)
 
 # Histograma de los datos
-hist(elevation$data,col='red',nclass=15,main="Histograma",ylab='Frecuencia Relativa',xlab='elevation')
+hist(datos$X1989_Primavera,col='red',nclass=15,main="Histograma",ylab='Frecuencia Relativa',xlab='Temperatura')
 
 #box-plot de los datos
-boxplot(elevation$data,col='green',ylab='elevation',main="Box-Plot")
+boxplot(datos$X1989_Primavera,col='green',ylab='Temperatura',main="Box-Plot")
+#first approach
+data_geo <-cbind(data_clean$Longitude,data_clean$Latitude,data_clean$X1989_Primavera)
+vg<-as.geodata(data_geo)
+plot(vg)
+#Se ve cierta dependencia de Y, latitud lo cual tiene sentido. Parecería ser una distrución normal
 
-# en pixel estar?n las coordenadas x-y de todos los puntos
-pixel <-coordinates(elevation[1])
-# En grilla, se define un vecindario; los vecinos de cada punto,
-# son todas las posiciones que est?n a una distancia
-# mayor a 0 y menor que 25, del punto
-grilla <- dnearneigh(pixel,0,25)
-card(grilla)
-# Ahora son todas las posiciones que est?n a una distancia
-# mayor a 0 y menor que 1.5, del punto
-grilla <- dnearneigh(pixel,0,1.5)
-card(grilla)
+pixel <-coordinates(vg[1])
+grilla <- dnearneigh(pixel,0,2)
+plot(grilla ,pixel)
+pesos <- nb2listw(grilla, style = "W")
 
+#Con Geary y Moran se rechaza la hipótesis nula, hay dependencia espacial
+moran_test <- moran.test(vg$data, nb2listw(grilla, style = "W"),randomisation=FALSE)
+geary_test <- geary.test(vg$data, nb2listw(grilla, style = "W"),randomisation=FALSE)
 # Generamos un gr?fico que eval?a cuan similar es
 # cada dato con respecto a los datos de sus vecinos
-M<-moran.plot(elevation$data,pesos,zero.policy=F,col=3, quiet=T,labels=T,xlab="elevation", ylab="lag(elevation)")
+M<-moran.plot(vg$data,pesos,zero.policy=F,col=3, quiet=T,labels=T,xlab="Temperatura", ylab="lag(Temperatura)")
 View(M)
-
 #Calculamos el ?ndice de Moran local y
 #mostramos los resultados
-ML <- localmoran(elevation$data,pesos,alternative ="less")
-IML<-printCoefmat(data.frame(ML,row.names=elevation$Casos),check.names=FALSE)
+ML <- localmoran(vg$data,pesos,alternative ="less")
+IML<-printCoefmat(data.frame(ML,row.names=data_clean$Casos),check.names=FALSE)
 
-# INDICE DE MOR?N GLOBAL (IMG) e ?NDICE DE GEARY(C)
-data(package="spdep")
-data(oldcol)
-View(COL.OLD)
-class(COL.OLD)
-help(COL.OLD)
-x<-COL.OLD$X
-y<-COL.OLD$Y
-data<-COL.OLD$CRIME
-v<-cbind(x,y,data)
-vg<-as.geodata(v)
-plot(vg)
-moran.test(vg$data, nb2listw(COL.nb, style="W"))
-geary.test(vg$data, nb2listw(COL.nb, style="W"))
+data_clean_sp <- data_clean
+coordinates(data_clean_sp) = ~Longitude+Latitude
 
-#summary(grilla) da informaci?n similar a card(grilla)
-summary(grilla)
+nube_clasica <- variog(vg, option = "cloud")
+bin_clasico <- variog(vg, uvec=seq(0,10,l=12))
+plot(nube_clasica, main = "classical estimator")
+plot(bin_clasico)
 
-pesos <- nb2listw(grilla, style = "W")
-pesos <- nb2listw(grilla, style = "S")
-moran.test(elevation$data, nb2listw(grilla, style = "S"))
-moran.test(elevation$data, nb2listw(grilla, style = "S"),randomisation=FALSE)
-geary.test(elevation$data, nb2listw(grilla, style = "S"),randomisation=FALSE)
-
-# Generamos un variograma emp?rico sin tendencia
-v <- variogram(cadmium~1, d)
+v <- variogram(X1989_Primavera~1, data_clean_sp)
+plot(v)
 
 # Ahora con el modelo esf?rico, sin tendencia
 vt_sph = fit.variogram(v, vgm(16, "Sph", 1500, 4))
@@ -94,17 +91,3 @@ plot(v , vt_sph)
 attr(vt_exp, 'SSErr')
 attr(vt_sph, 'SSErr')
 
-# C?mo fijar los valores de cutoff y width?
-# Respuesta: Usar el variograma nube
-# para ello se usa la funci?n variogram
-nube_clasica <- variog(d, option = "cloud")
-nube_clasica <- variog(d$cadmium, option = "cloud")
-
-# El problema es que variog es de la familia geodata
-class(d)
-# transformemos d en un objeto gd de la clase geodata
-gd<-as.geodata(d)
-
-class(gd)
-nube_clasica <- variog(gd, option = "cloud")
-plot(nube_clasica, main = "classical estimator")
