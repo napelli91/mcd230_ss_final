@@ -74,7 +74,7 @@ ggplot() +
                         color = temp
                     ),
                     alpha = .5) +
-    coord_sf(datum=st_crs(4326))
+    coord_sf(datum = st_crs(4326))
 
 ## Hay un problema con la forma de datos entre el mapa y las temp (hay q pasar la longitud
 ## a sexagesimal que tenga en vez de 49.5 a 49° 30' 00''N)

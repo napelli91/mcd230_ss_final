@@ -19,7 +19,7 @@ names(data) <- c('latitude', 'longitude', 'temp')
 
 data(world)
 spain_shp <- world %>% filter(name_long == 'Spain') %>% dplyr::select(geom)
-france_shp <- world %>% filter(name_long == 'Spain') %>% dplyr::select(geom)
+france_shp <- world %>% filter(name_long == 'France') %>% dplyr::select(geom)
 
 
 ggplot() +
@@ -62,8 +62,84 @@ ggplot() +
     coord_sf(datum=st_crs(4326))
 
 
+## 75% of the sample size
+smp_size <- floor(0.7 * nrow(sp_data))
+
+## set the seed to make your partition reproducible
+set.seed(42)
+train_ind <- sample(seq_len(nrow(sp_data)), size = smp_size)
+
+sp_data_final <- sp_data[train_ind, ]
+sp_data_bin <- sp_data[-train_ind, ]
+
+plot(as.geodata(cbind(sp_data_final$longitude,sp_data_final$latitude,sp_data_final$temp)))
+ggplot() +
+    geom_sf(data = spain_shp$geom) +
+    geom_point(data = sp_data_final,
+               aes(x = longitude,
+                   y = latitude,
+                   color = temp
+               ),
+               alpha = .5) +
+    scale_color_gradient2(low = "blue",
+                          high = "red",
+                          space = "Lab") +
+    coord_sf(datum = st_crs(4326))
 
 
-data_geo <-cbind(sp_data$longitude,sp_data$latitude,sp_data$temp)
-vg<-as.geodata(data_geo)
-plot(vg)
+sp_geo_data <- as.geodata(cbind(sp_data$longitude,sp_data$latitude,sp_data$temp))
+plot(sp_geo_data)
+
+
+save(sp_data, sp_data_final, sp_data_bin, spain_shp,
+     file = "spain_geodata_temperature_1989_spring.RData")
+
+
+fr_data <- data %>% dplyr::filter(longitude >= france_bbox[1],
+                                  longitude <= france_bbox[3],
+                                  latitude >= france_bbox[2],
+                                  latitude <= france_bbox[4])
+fr_data <- fr_data %>% filter(temp > -20)
+
+ggplot() +
+    geom_sf(data = france_shp$geom) +
+    xlim(-6, 9) +
+    ylim(41.5, 51.5) +
+    geom_point(data = fr_data,
+               aes(x = longitude,
+                   y = latitude,
+                   color = temp
+               ),
+               alpha = .5) +
+    scale_color_gradient2(low = "blue",
+                          midpoint = 5,
+                          mid = "yellow",
+                          high = "red",
+                          space = "Lab") +
+    coord_sf(datum = st_crs(4326))
+
+
+fr_data <- fr_data %>% filter(!between(longitude, -6, 1) | !between(latitude, 49.9, 52))
+fr_data <- fr_data %>% filter(!between(longitude, -6, -2) | !between(latitude, 42, 44))
+fr_data <- fr_data %>% filter(!between(longitude, 4, 9) | !between(latitude, 50, 52))
+fr_data <- fr_data %>% filter(!between(longitude, 7.5, 9) | !between(latitude, 42, 52))
+fr_data <- fr_data %>% filter(!between(longitude, -2, 4) | !between(latitude, 42, 42.5))
+
+fr_geo <- as.geodata(cbind(fr_data$longitude,fr_data$latitude,fr_data$temp))
+plot(fr_geo)
+
+## sampling france dataset
+smp_size <- floor(0.6 * nrow(fr_data))
+
+## set the seed to make your partition reproducible
+set.seed(42)
+train_ind <- sample(seq_len(nrow(fr_data)), size = smp_size)
+
+fr_data_final <- fr_data[train_ind, ]
+fr_data_bin <- fr_data[-train_ind, ]
+
+sp_geo_data <- as.geodata(cbind(fr_data_final$longitude,fr_data_final$latitude,fr_data_final$temp))
+plot(sp_geo_data)
+
+save(fr_data, fr_data_final, fr_data_bin, france_shp,
+     file = "france_geodata_temperature_1989_spring.RData")
