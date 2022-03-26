@@ -45,6 +45,22 @@ for (i in try_dist){
     stat_geary <- append(stat_geary, geary_test_try$statistic)
 }
 
-plot(try_dist,stat_moran)
-plot(try_dist,stat_geary)
+dat_gg_mg <- data.frame(try_dist, stat_moran, stat_geary)
+
+g1 = ggplot(dat_gg_mg) +
+    geom_line(aes(x = try_dist, y = stat_moran),size = 1, col = "turquoise3") +
+    geom_line(aes(x = try_dist, y = stat_geary), size = 1, col = "orange") +
+    geom_hline(yintercept = 9.92, colour = "purple") +
+    ylab("Estadístico") +
+    xlab("Máxima distancia de vecinos")+
+    theme(legend.position = "bottom", legend.justification = c("right", "top"))+
+    ggtitle("Estadísticos de Moran y Geary según distancia de vecinos")
+
+grilla1 <- dnearneigh(pixel,0,2)
+grilla2 <- dnearneigh(pixel,0,4)
+grilla3 <- dnearneigh(pixel,0,7)
+par(mfrow=c(1,3))
+plot(grilla1 ,pixel, main="Vecinos Max dist 2",col=alpha("blue",0.9))
+plot(grilla2 ,pixel, main="Vecinos Max dist 4",col=alpha("red",0.9))
+plot(grilla3 ,pixel, main="Vecinos Max dist 7",col=alpha("green",0.9))
 
