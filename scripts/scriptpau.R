@@ -3,7 +3,7 @@ library(gstat)
 library(geoR)
 library(spdep)
 
-d = sp_data
+d = sp_data_final
 #latitude, longitude y temp
 class(d)
 
@@ -23,13 +23,23 @@ plot(v_nube_sintend)
 v_map_sintend <- variogram(temp~1, d, cutoff=4, width = 1, map=T)
 plot(v_map_sintend)
 
+## variograma empirico
+bin_clasico <- variog(gd, uvec=seq(0,8,l=18))
+plot(bin_clasico)
+
+
 #variograma con tendencia en y
 v_nube_tend_y <- variogram(temp~latitude, d, cloud=T)
 plot(v_nube_tend_y)
-v_map_tend_y <- variogram(temp~latitude, d, cutoff=4, width = 1, map=T)
+v_map_tend_y <- variogram(temp~latitude, d, cutoff=1, width = 1, map=T)
 plot(v_map_tend_y)
 #aun agregando la tendencia no queda lindo
 #ver más parámetros para variogram?
+
+## variograma empirico
+bin_clasico <- variog(temp~latitude, uvec=seq(0,8,l=18))
+plot(bin_clasico)
+
 
 #data_clean <- filter(df, Latitude>-83.98&Latitude<-79.51,Longitude>24.98&Longitude<31.55)
 
