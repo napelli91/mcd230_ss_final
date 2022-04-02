@@ -78,6 +78,7 @@ $$
 En una primera aproximación, tanto el *Índice de Moran* cómo el *Estadístico C de Geary* son significativos con los siguientes p-valores `r moran_test$p.value` y `r geary_test$p.value`, respectivamente con una distancia máxima de 3° para definir la cantidad de vecinos. Ahora bien, para dar una idea de la sensibilidad del parámetro con una distancia máxima de 2° se consiguen 25 vecinos en promedio por punto, mientras que extendiendo esa distancia máxima a 6° se consiguen 126 vecinos en promedio. 
 
 ```{r, echo=FALSE}
+## Add title here "variabilidad segun nivel de vecinos"
 par(mfrow=c(1,2))
 plot(grilla1 ,pixel)
 plot(grilla2 ,pixel,col=alpha("red",0.9))
