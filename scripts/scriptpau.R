@@ -61,8 +61,6 @@ v_nube_tend_y <- variogram(temp~latitude, d, cloud=T)
 plot(v_nube_tend_y)
 v_map_tend_y <- variogram(temp~latitude, d, cutoff = 4, width = 1, map=T)
 plot(v_map_tend_y)
-v_map_tend_y <- variogram(temp~latitude+longitude, d, cutoff = 4, width = 1, map=T)
-plot(v_map_tend_y)
 #aun agregando la tendencia no queda lindo
 #ver más parámetros para variogram?
 

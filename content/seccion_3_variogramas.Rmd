@@ -1,0 +1,99 @@
+---
+title: "Parte 3: Variogramas"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(gstat)
+library(geoR)
+library(spdep)
+
+setwd("C:/Users/pmach/OneDrive/Documentos/mcd230_ss_final/data")
+load(file = "spain_geodata_temperature_1989_spring.RData")
+
+d = sp_data_final
+coordinates(d) = ~longitude+latitude
+
+gd<-as.geodata(d)
+class(gd)
+```
+
+## Estacionariedad de los datos
+
+Luego de haber analizado la autocorrelación de nuestros datos, pasamos a pensar si el proceso que los generó es estacionario o no. Con ayuda de un *plot* podemos rápidamente observar si hay tendencia tanto en x como en y, y la normalidad de nuestro proceso:
+
+```{r trend}
+d = sp_data_final # guardamos el set de datos recortado en un objeto
+coordinates(d) = ~longitude+latitude
+
+gd<-as.geodata(d) # lo pasamos a un objetivo geodata para poder graficarlo
+
+plot(gd, lowess=TRUE)
+
+```
+
+Al respecto, podemos ver por un lado que los datos de temperatura geolocalizados en España son agrupados en 4 grupos distintos según R, de acuerdo a sus caracteristicas similares entre sí. Por otro lado, si miramos el *scatterplot* del eje y, se puede ver claramente la tendencia en la variable latitud, lo cual corrobora nuestras conclusiones en el análisis del apartado anterior. En cuanto al eje x (longitud) no vemos una tendencia distinguible a siemple vista. Finalmente, la distribución del proceso pareciera ser bimodal, lo cual podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).  
+
+### Varianza del cambio
+
+La primera aproximación que tomamos para estimar la varianza del cambio es realizar tanto el variograma nube como el mapa. Para comenzar, graficamos ambos **sin tendencia** para testear el supuesto de estacionariedad en media y varianza.
+
+```{r variog nube}
+v_nube_sintend <- variogram(temp~1, d, cloud=T)
+plot(v_nube_sintend) 
+
+```
+
+Para realizar el variograma mapa tomamos valores de *cut off* y *width* que observamos medianamente con el variograma nube.
+
+```{r variog mapa}
+v_map_sintend <- variogram(temp~1, d, cutoff=4, width = 1, map=T)
+plot(v_map_sintend)
+
+```
+
+Con ayuda de éstas visualizaciones comprobamos efectivamente que no estamos frente a un proceso isotrópico y que no es simétrico, ya que vemos que dependiendo de la dirección del vector de separación, la varianza del cambio se comporta de manera distinta.  
+Proseguimos a agregarle la tendencia que habíamos observado en y para ver si sustrayendo la tendencia y modelando con los residuos se soluciona el problema de la anisotropía. 
+
+```{r variog nube con tendencia}
+v_nube_tend_y <- variogram(temp~latitude, d, cloud=T)
+plot(v_nube_tend_y)
+
+```
+```{r variog mapa con tendencia}
+v_map_tend_y <- variogram(temp~latitude, d, cutoff = 4, width = 1, map=T)
+plot(v_map_tend_y)
+
+```
+
+Aún modelando la tendencia en y vemos en el variograma mapa que el proceso no se asimila a uno isotrópico. Nos preguntamos si se debía quizás a una tendencia en x que no estábamos observando, pero al modelar con ambas tendencias de forma lineal los resultados no cambian.
+
+Finalmente, resolvimos trabajar de manera direccional. 
+
+### Variograma empírico
+
+Para estimar la variabilidad del cambio espacial del proceso realizamos el variograma nube empírico, pero esta vez utilizando la función **variog**.
+
+```{r}
+nube_clasica <- variog(gd, option = "cloud")
+plot(nube_clasica)
+
+```
+
+A este punto vemos que tanto el variograma común como el geoestadístico conservan la misma forma funcional (aunque no la magnitud), lo cual es una buena señal.
+
+Con este variograma nube vemos que a partir de un **h=8** la varianza de los datos comienza a romperse, corroborando nuevamente nuestras conclusiones de la sección anterior. Esto nos indica que en las máximas distancias la varianza es la menor posible, lo cual tiene sentido ya que los puntos más alejados en el país de España son los que tienen mar alrededor, el cual conserva medianamente la misma temperatura. 
+
+A continuación computamos el variograma empírico de puntos con tendencia lineal entre las coordenadas.
+
+```{r}
+vg_trend <- variog(gd, trend = "1st", uvec = seq(0,8,l = 16))
+plot(vg_trend)
+
+```
+
+
