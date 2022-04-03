@@ -1,0 +1,28 @@
+---
+title: "Grupo 4: Preguntas Teóricas"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Pregunta 1
+
+Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y por qué la estadística clásica presenta limitaciones para este análisis. Proporcione un ejemplo (no dado en clase) que ilustre su explicación
+
+```{r cars}
+summary(cars)
+```
+
+## Pregunta 2
+
+¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elcción?
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

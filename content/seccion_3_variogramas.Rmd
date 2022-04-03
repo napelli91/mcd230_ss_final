@@ -78,7 +78,7 @@ Finalmente, resolvimos trabajar de manera direccional.
 
 Para estimar la variabilidad del cambio espacial del proceso realizamos el variograma nube empírico, pero esta vez utilizando la función **variog**.
 
-```{r}
+```{r, results='hide', message = FALSE}
 nube_clasica <- variog(gd, option = "cloud")
 plot(nube_clasica)
 
@@ -90,10 +90,21 @@ Con este variograma nube vemos que a partir de un **h=8** la varianza de los dat
 
 A continuación computamos el variograma empírico de puntos con tendencia lineal entre las coordenadas.
 
-```{r}
-vg_trend <- variog(gd, trend = "1st", uvec = seq(0,8,l = 16))
-plot(vg_trend)
+```{r, results='hide', message = FALSE}
+vg_trend <- variog(gd, trend = "1st", uvec = seq(0,8,l = 25))
+s1 = variog.mc.env(gd, obj = vg_trend)
+plot(vg_trend, env = s1)
 
 ```
+
+Por otro lado, con la ayuda de un variograma con 4 direcciones distintas, podemos observar cómo el mismo cambia según la dirección que se elija.
+
+```{r, results='hide', message = FALSE}
+vario.4 <- variog4(gd, max.dist = 8)
+plot(vario.4, lwd = 2)
+
+```
+
+En función de todo lo analizado y observado gráficamente, decidimos ajustar el variograma teórico al variograma direccional  con dirección $\frac{3\pi}{4}$. Esta elección se sustenta no solo en elegir la dirección que más simétrica parece en el variograma mapa sin tendencia, sino también sobre el hecho de que la dirección de 135° es la que más estable parece.
 
 

@@ -65,8 +65,13 @@ plot(v_map_tend_y)
 #ver más parámetros para variogram?
 
 ## variograma empirico
-vg_trend <- variog(gd, trend = "1st", uvec = seq(0,8,l = 16))
+vg_trend <- variog(gd, trend = "1st", uvec = seq(0,8,l = 25))
 plot(vg_trend)
+
+# intervalos de simulacion por permutacion aleatoria de los residuos
+s1 = variog.mc.env(gd, obj = vg_trend)
+plot(vg_trend, env = s1)
+
 
 
 #data_clean <- filter(df, Latitude>-83.98&Latitude<-79.51,Longitude>24.98&Longitude<31.55)
