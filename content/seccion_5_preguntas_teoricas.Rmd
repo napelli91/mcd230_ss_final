@@ -11,18 +11,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Pregunta 1
 
-Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y por qué la estadística clásica presenta limitaciones para este análisis. Proporcione un ejemplo (no dado en clase) que ilustre su explicación
+**Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y por qué la estadística clásica presenta limitaciones para este análisis. Proporcione un ejemplo (no dado en clase) que ilustre su explicación.**
 
-```{r cars}
-summary(cars)
-```
+La estadística clásica presenta limitaciones para analizar datos espaciales por varias razones. Por un lado, por el hecho de que nos interesa estudiar la autocorrelación espacial ya que los valores de la variable suelen estar autocorrelacionados por anturaleza. En consecuencia, no podemos asumir que los eventos son i.i.d. 
 
 ## Pregunta 2
 
-¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elcción?
+**¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elección?**
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+Sabiendo que necesitamos que el variograma sea una función condicionalmente definida no negativa y que necesitamos asegurarnos de que la función sea contínua para realizar predicciones, es que ajustamos un variograma teórico a nuestro variograma empírico. Realizamos esto con alguna función dada que ya sabemos cumple la condición de ser definida no negativa. 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Si bien sabemos que algunas distribuciones teóricas se ajustan mejor a algunos procesos en particular (lineal para procesos no estacionarios, esférico para procesos con dominios en $R_{i}$ = 1, 2, 3, etc), la mejor manera de seleccionar el variograma teórico que mejor ajuste a nuestros datos es graficar el variograma empírico e ir buscando la función que mejor se acomode a la forma de los mismos, ya sea con *eyefit* o probando una por una. 
+
+A la hora de realizar este proceso, tenemos algunos parámetros del variograma como lo son la meseta, el rango práctico y el *nugget*. La meseta nos dice el punto para el cual aunque la distancia aumente, la varianza del cambio no se modifica; el rango práctico indica cuando estoy a 5% de llegar a la meseta; y, finalmente, el *nugget* aparece implícito en algunos procesos y define el tramo entre el comienzo donde empiezo a medir y puede que no tenga datos, y donde encuentro efectivamente el primer dato. Estos parámetros podemos definirlos observando el variograma empírico. 
+
+Una vez que seleccionamos varias opciones que nos parece se asemejen a nuestro variograma empírico, podemos evaluar la *performance* de las mismas por distintos métodos: MCO, MC Ponderado y Gaussiano con la Función de Máxima Verosimilitud. Nos interesa quedarnos con el variograma teórico que menor error tenga con respecto a los datos empíricos, ya que ese será el que mejor ajuste tenga. 
+
+
