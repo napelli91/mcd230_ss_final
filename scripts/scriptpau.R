@@ -146,16 +146,20 @@ plot(vario.4, lwd = 2)
 
 
 #variograma con tendencia en y
-v_nube_tend_y <- variogram(temp~latitude, d, cloud=T)
+v_nube_tend_y <- variogram(temp~latitude+longitude, d, cloud=T)
 plot(v_nube_tend_y)
-v_map_tend_y <- variogram(temp~latitude, d, cutoff = 4, width = 1, map=T)
+v_map_tend_y <- variogram(temp~latitude+longitude, d, cutoff = 4, width = 1, map=T)
 plot(v_map_tend_y)
-#aun agregando la tendencia no queda lindo
 #ver más parámetros para variogram?
+v_tend_y <- variogram(temp~latitude+longitude, d)
+plot(v_tend_y)
+
+
 
 ## variograma empirico
-vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7,l = 20))
+vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7, l = 20))
 plot(vg_trend)
+#cortamos en 7
 
 # intervalos de simulacion por permutacion aleatoria de los residuos
 s1 = variog.mc.env(gd, obj = vg_trend)
@@ -167,21 +171,28 @@ plot(v)
 
 vgm(3, "Exp", 8,1)
 
-vt_exp = fit.variogram(v, vgm(3, "Exp", 1,1))
+vt_exp = fit.variogram(v_tend_y, vgm(2.19, "Exp", 0.78, 0), fit.method = 6)
 vt_exp
-plot(v, vt_exp)
+plot(v_tend_y, vt_exp)
 
-vt_sph = fit.variogram(v, vgm(2.5, "Sph", 1, 1))
-vt_sph
-plot(v , vt_sph)
-#creo que este me gusta mas
+vt_mat = fit.variogram(v_tend_y, vgm(2.2, "Mat", 1, 0, kappa = 0.1), fit.kappa = T)
+vt_mat
+plot(v_tend_y, vt_mat)
 
-#gaussian sigma 2.28 phi 1.32 tausq 0 practical range 2.28
+vt_esf = fit.variogram(v_tend_y, vgm(3, "Sph", 1.14, 0.03))
+vt_esf
+plot(v_tend_y, vt_esf)
 
+#6 = OLS
+
+#gaussian sigma 2.21 phi 1.14 tausq 0.03 practical range 1.97
+#exponential sigma 2.14 phi 1.14 tausq 0.03 practical range 3.41
 attr(vt_exp, 'SSErr')
-attr(vt_sph, 'SSErr')
+attr(vt_esf, 'SSErr')
+attr(vt_mat, 'SSErr')
 #tiene menos error también
 
+vt_exp
 
 patos = eyefit(vg_trend)
 patos
