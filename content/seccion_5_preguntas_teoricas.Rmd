@@ -13,7 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 **Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y por qué la estadística clásica presenta limitaciones para este análisis. Proporcione un ejemplo (no dado en clase) que ilustre su explicación.**
 
-La estadística clásica presenta limitaciones para analizar datos espaciales por varias razones. Por un lado, por el hecho de que nos interesa estudiar la autocorrelación espacial ya que los valores de la variable suelen estar autocorrelacionados por anturaleza. En consecuencia, no podemos asumir que los eventos son i.i.d. 
+La estadística clásica presenta limitaciones para analizar datos espaciales por varias razones. El motivo más importante es que en ciertas circunstancias, la ubicación de los datos nos puede estar queriendo indicar correlaciones y tendencias que con los métodos de la estadística clásica no se llegan a tomar en cuenta.  
+
+Por otro lado, como para estudiar la relación espacial entre los eventos nos interesa analizar la autocorrelación espacial entre los mismos. Como los valores de la variable suelen estar autocorrelacionados por naturaleza, no podemos asumir que los eventos son i.i.d, por lo cual analizarlo con elementos de estadística clásica se complica. 
 
 ## Pregunta 2
 
