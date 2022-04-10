@@ -1,7 +1,21 @@
-## Details from the child document
+---
+title: "Parte 1: Descripción del dataset y procesamiento de datos"
+output:
+  html_document:
+    df_print: paged
+---
 
-Hi, there. I'm a child with a plot and as many details as necessary.
+## Descripción del dataset
 
-```{r test-child}
-plot(trees)
+Los datos originales surgen de la reconstrucción de la serie de tiempo de datos de temperatura para Europa desde el año 1500 al 2002. El dataset contiene una grilla de 9100 puntos, formados por 130 longitudes y 70 latitudes, en un rango que van desde latitud 30°N hasta 70°N y longitud 25°O hasta los 40°E. A su vez, los años están dividos en estaciones, siendo cuatro grillas por cada año. Los datos provienen de*Luterbacher, J., Dietrich, D., Xoplaki, E., Grosjean, M., and Wanner, H., 2004(DOI:10.1126/science.1093877)* y *Xoplaki, E., Luterbacher, J., Paeth, H., Dietrich, D., Steiner N., Grosjean, M., and Wanner, H., 2005(DOI:10.1029/2005GL023424))* MEJORAR CITAS o CITAR MEJOR.
+
+Para nuestro problema en particular, decidimos tomar la primavera de 1989 y circunscribir el análisis a la región que pertenece a España. Recortamos el mapa en la latitud 35.61°N a 43.99°N longitud 10.69°O a 4.48°E. Es importante aclarar que solamente los puntos de tierra tienen datos de temperatura, mientras lo que están en el oceano son tipo NULL.  
+
+### Preprocesamiento de los datos
+
+ACÁ TODO EL LABURAZO QUE HICISTE NAHUEL
+
+Luego con los datos disponibles en csv para la primavera de 1989, filtramos el área correspondiente para la segmentación del territorio Español. Finalmente, para poder realizar un trabajo predictivo, retiramos puntos aleatoriamente de la grilla separando los datos en train y test. Se eligió la semilla 42, a los fines prácticos de mantener la reproducibilidad. Nuestro datos de entrenamiento tienen 163 puntos, mientras que los de test tienen 70 puntos. 
+
+
 ```
