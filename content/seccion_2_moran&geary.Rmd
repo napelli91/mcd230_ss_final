@@ -1,5 +1,5 @@
 ---
-title: "Parte-2-Moran_Geary"
+title: "Parte:2 Moran_Geary"
 output:
   html_document:
     df_print: paged
