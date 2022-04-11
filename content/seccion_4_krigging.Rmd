@@ -1,0 +1,13 @@
+# Proceso de Krigging
+
+Ahora que tenemos los elementos necesarios en nuestro análisis vamos a a pasar a estimar
+nuevos valores basados en el modelo propuesto. Para ello vamos a considerar 2 casos:
+
+* Una grilla generada dentro del dominio de nuestro dataset con una resolución de 0.2x0.2
+en latitud y longitud. 
+* Los puntos extraidos de la grilla del dataset inicial que utilizamos como _validación_
+del modelo de krigging
+
+## Análisis iniciales
+
+

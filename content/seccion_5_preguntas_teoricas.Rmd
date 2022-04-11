@@ -1,23 +1,14 @@
----
-title: "Grupo 4: Preguntas Teóricas"
-output:
-  html_document:
-    df_print: paged
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+# Cuestionario
 
 ## Pregunta 1
 
-**Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y por qué la estadística clásica presenta limitaciones para este análisis. Proporcione un ejemplo (no dado en clase) que ilustre su explicación.**
+> Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y por qué la estadística clásica presenta limitaciones para este análisis. Proporcione un ejemplo (no dado en clase) que ilustre su explicación.
 
 La estadística clásica presenta limitaciones para analizar datos espaciales por varias razones. Por un lado, por el hecho de que nos interesa estudiar la autocorrelación espacial ya que los valores de la variable suelen estar autocorrelacionados por anturaleza. En consecuencia, no podemos asumir que los eventos son i.i.d. 
 
 ## Pregunta 2
 
-**¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elección?**
+>¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elección?
 
 Sabiendo que necesitamos que el variograma sea una función condicionalmente definida no negativa y que necesitamos asegurarnos de que la función sea contínua para realizar predicciones, es que ajustamos un variograma teórico a nuestro variograma empírico. Realizamos esto con alguna función dada que ya sabemos cumple la condición de ser definida no negativa. 
 

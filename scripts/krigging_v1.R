@@ -211,7 +211,7 @@ krig.val.data.alt <- krige(temp~latitude+longitude,
                        model = vg.best.fit)
 
 
-kriging_error = sqrt(mean((validation.data$temp - exp(krig.val.data$var1.pred))^2))
+kriging_error = sqrt(mean((validation.data$temp - krig.val.data$var1.pred)^2))
 
 # K-nearest neighbours
 k_vector = seq(1, 20)
@@ -219,9 +219,13 @@ k_error_vector = c()
 for (k in k_vector){
     knn_model = knn.reg(sp_data_final_clean@coords, test = NULL,
                         sp_data_final_clean$temp, k = k)
-    k_error = sqrt(mean((sp_data_final_clean$temp - exp(knn_model$pred))^2))
+    k_error = sqrt(mean((sp_data_final_clean$temp - knn_model$pred)^2))
     k_error_vector = c(k_error_vector, k_error)
 
 }
 
 plot(k_vector, k_error_vector, type="l")
+
+
+
+

@@ -18,21 +18,66 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-# Primera sección
+***Inicialización de librerias***
+```{r require.libs, include=FALSE}
+if(!require(pacman)) install.packages("pacman")
+pacman::p_load(
+    'gstat',
+    'geoR',
+    'ggplot2',
+    'spdep',
+    'sp',
+    'dplyr',
+    'automap',
+    'rgdal',
+    'udunit2'
+)
+
+load(file = "./data/spain_geodata_temperature_1989_spring.RData")
+
+```
+
+Para este trabajo tenemos un grupo grande de librerias a utilizar. Vamos a separar por su
+funcionalidad.
+
+```{r includes, include=T}
+## librerias básicas
+library(dplyr)
+library(ggplot2)
+library(raster)
+library(readr)
+
+## Librerias de geo estadística
+library(geoR)
+library(gstat)
+library(rgdal)
+library(sp)
+library(spdep)
+
+
+## Librerias auxiliares
+library(automap)
+library(FNN)
+library(lattice)
+library(udunits2)
+
+```
+
 
 ```{r, child='content/seccion_1.Rmd'}
 ```
 
-Change `BOSS_MODE` to `TRUE` if this report is to be read
-by the boss:
-
-```{r, include=FALSE}
-BOSS_MODE <- F
+\newpage
+```{r, child='content/seccion_2.Rmd'}
 ```
 
-Conditionally include the appendix:
-
-```{r, child=if (!BOSS_MODE) 'content/appendix.Rmd'}
+\newpage
+```{r, child='content/seccion_4_krigging.Rmd'}
 ```
 
+\newpage
+```{r, child='content/seccion_5_preguntas_teoricas.Rmd'}
+```
+
+\newpage
 

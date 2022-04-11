@@ -1,0 +1,117 @@
+```{r s2.overall, include=FALSE}
+
+#Tanto para Moran cómo para Geary
+sp_geo_data <- as.geodata(cbind(sp_data_final$longitude,sp_data_final$latitude,sp_data_final$temp))
+pixel <- coordinates(sp_geo_data[1])
+grilla <- dnearneigh(pixel,0,3)
+plot(grilla ,pixel)
+pesos <- nb2listw(grilla, style = "W")
+
+#Con Geary y Moran se rechaza la hipótesis nula, hay dependencia espacial
+moran_test <- moran.test(sp_geo_data$data, nb2listw(grilla, style = "W"),randomisation=FALSE)
+geary_test <- geary.test(sp_geo_data$data, nb2listw(grilla, style = "W"),randomisation=FALSE)
+
+try_dist <- seq(1.5,8,0.25)
+stat_moran <- NULL
+stat_geary <- NULL
+
+for (i in try_dist){
+    grilla <- dnearneigh(pixel,0,i)
+    pesos <- nb2listw(grilla, style = "W")
+    moran_test_try <- moran.test(sp_geo_data$data, nb2listw(grilla, style = "W"),randomisation=FALSE)
+    geary_test_try <- geary.test(sp_geo_data$data, nb2listw(grilla, style = "W"),randomisation=FALSE)
+    stat_moran <- append(stat_moran, moran_test_try$statistic)
+    stat_geary <- append(stat_geary, geary_test_try$statistic)
+}
+
+dat_gg_mg <- data.frame(try_dist, stat_moran, stat_geary)
+
+g1 = ggplot(dat_gg_mg) +
+    geom_line(aes(x = try_dist, y = stat_moran),size = 1, col = "turquoise3") +
+    geom_line(aes(x = try_dist, y = stat_geary), size = 1, col = "orange") +
+    geom_hline(yintercept = 20, colour = "purple") +
+    ylab("Estadístico") +
+    xlab("Máxima distancia de vecinos")+
+    theme(legend.position = "bottom", legend.justification = c("right", "top"))+
+    ggtitle("Estadísticos de Moran y Geary según distancia de vecinos")
+
+grilla1 <- dnearneigh(pixel,0,2)
+grilla2 <- dnearneigh(pixel,0,6)
+
+```
+
+## Descripción del problema y autocorrelación
+
+En un problema de estadística espacial nos interesa estudiar la varianza-covarianza de la
+varible en estudio en el espacio. Es decir, determinar si la variable regionalizada tiene
+un comportamiento que se pueda modelar en función a su ubicación en el espacio. Para este
+motivo, vamos a medir la autocorrelación espacial mediante el *Índice de Moran* y el
+*Estadístico C de Geary* que miden la autocorrelación lineal de los datos.  
+
+Mientras el *Índice de Moran* muestra la similaridad entre puntos cercanos, y cuyo peso
+dentro del índice disminuye conforme los puntos están alejados, el *Estadístico C de Geary*
+mide la autocorrelación dando lugar a un rango de valores que va de 0 a 2, dónde el valor
+1 implica la ausencia de correlación espacial y en los extremos se encuentran la
+correlación positiva y negativa, respectivamente. 
+
+$$
+\text{Indice Moran} = \frac{n}{(n-1)W_0S^2} \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij}(z(s_i)- \bar{z})(z(s_j)- \bar{z})
+$$
+$$
+\text{Estadístico }C\text{ Geary}  = \frac{1}{2W_0S^2} \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij}((z(s_i)-z(s_j))^2)
+$$
+En una primera aproximación, tanto el *Índice de Moran* cómo el *Estadístico C de Geary* 
+son significativos con los siguientes p-valores `r moran_test$p.value` y `r geary_test$p.value`, 
+respectivamente con una distancia máxima de 3° para definir la cantidad de vecinos.
+Ahora bien, para dar una idea de la sensibilidad del parámetro con una distancia máxima
+de 2° se consiguen 25 vecinos en promedio por punto, mientras que extendiendo esa distancia
+máxima a 6° se consiguen 126 vecinos en promedio. 
+
+```{r s2.variabilidad, echo=FALSE}
+## Add title here "variabilidad segun nivel de vecinos"
+par(mfrow=c(1,2))
+plot(grilla1 ,pixel)
+plot(grilla2 ,pixel,col=alpha("red",0.9))
+```
+
+### Estabilidad de los estadísticos según distancia máxima de vecinos
+
+Para asegurarnos de que los estadísticos sean significativos dentro de un rango aceptable
+de distancia entre vecinos corrimos los test distintas cantidades de vecinos. Es una
+secuencia que va desde 1.5° de distancia máxima hasta 8°, y se puede ver que tanto Moran
+cómo Geary se vuelven más significativos hasta una distancia máxima de 3° para descender
+con una pendiente cada vez menos pronunciada hasta los 8° de distancia máxima. Por eso
+entendemos que los estadísticos parecerían tener cierta estabilidad en el rango que va de 2° a 4° de distancia máxima. 
+
+```{r s2.comparativa, echo=FALSE}
+g1
+```
+
+### Índice de Moran Local y detección de puntos atípicos
+
+En el caso del problema provisto de temperaturas, el estadístico C de Geary con `r geary_test$estimate[1]`
+nos está hablando de una correlación positiva. Es decir, a puntos de alta temperatura le 
+corresponden puntos de alta temperatura a su alrededor, y lo mismo se espera con puntos de
+baja temperatura o temperatura media. Con el procedimiento de Moran Local procederemos a 
+ver cuáles son los puntos atípicos cuya disimilaridad es sigficativa. 
+
+$$IML_{Si} = \frac{z(Si)- \bar{z}}{S^2} \sum_{j=1 j \neq i}^{n}w_{ij}(z(s_j)- \bar{z})$$
+```{r s2.moran, echo=TRUE}
+M<-moran.plot(sp_geo_data$data,pesos,zero.policy=F,col=3, quiet=T,labels=T,xlab="Temperatura", ylab="lag(Temperatura)")
+View(M)
+
+ML <- localmoran(sp_geo_data$data,pesos,alternative ="less")
+IML<-printCoefmat(data.frame(ML,row.names=sp_geo_data$Casos),check.names=FALSE)
+
+neg_Moran_Local <- subset(IML, Pr.z...E.Ii.. < 0.05 & Z.Ii < 0)
+neg_IML <- as.numeric(rownames(neg_Moran_Local))
+
+sp_data_final_clean <- sp_data_final[-c(neg_IML), ]
+sp_geo_data_clean <- as.geodata(cbind(sp_data_final_clean$longitude,sp_data_final_clean$latitude,sp_data_final_clean$temp))
+```
+
+Eliminamos los desvíos negativos cuyo p-valor es menor al 0.05. De esta manera limpiamos a
+los datos de los valores atípicos con mayor disimilaridad. 
+
+
+

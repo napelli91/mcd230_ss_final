@@ -12,10 +12,10 @@ library(spdep)
 library(lattice)
 library(rgdal)
 
-load(file = "spain_geodata_temperature_1989_spring.RData")
+load(file = "data/spain_geodata_temperature_1989_spring.RData")
 
 sp_geo_data <- as.geodata(cbind(sp_data_final$longitude,sp_data_final$latitude,sp_data_final$temp))
-pixel <-coordinates(sp_geo_data[1])
+pixel <- coordinates(sp_geo_data[1])
 grilla <- dnearneigh(pixel,0,2)
 plot(grilla ,pixel)
 pesos <- nb2listw(grilla, style = "W")
@@ -56,8 +56,8 @@ g1 = ggplot(dat_gg_mg) +
     geom_line(aes(x = try_dist, y = stat_geary), size = 1, col = "orange") +
     geom_hline(yintercept = 20, colour = "purple") +
     ylab("Estadístico") +
-    xlab("Máxima distancia de vecinos")+
-    theme(legend.position = "bottom", legend.justification = c("right", "top"))+
+    xlab("Máxima distancia de vecinos") +
+    theme(legend.position = "bottom", legend.justification = c("right", "top")) +
     ggtitle("Estadísticos de Moran y Geary según distancia de vecinos")
 
 g1
@@ -91,7 +91,9 @@ neg_IML <- as.numeric(rownames(neg_Moran_Local))
 sp_data_final_clean <- sp_data_final[-c(neg_IML), ]
 sp_geo_data_clean <- as.geodata(cbind(sp_data_final_clean$longitude,sp_data_final_clean$latitude,sp_data_final_clean$temp))
 
+save(sp_data_final_clean, sp_geo_data_clean, file = 'data/spain_preprocessed_data.RData')
 ######
+
 
 d = sp_data_final_clean
 #latitude, longitude y temp

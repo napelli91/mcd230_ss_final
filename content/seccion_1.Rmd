@@ -1,21 +1,72 @@
----
-title: "Parte 1: Descripción del dataset y procesamiento de datos"
-output:
-  html_document:
-    df_print: paged
----
+# Descripción del dataset y procesamiento de datos
 
-## Descripción del dataset
+Los datos originales surgen de la reconstrucción de la serie de tiempo de datos de 
+temperatura para Europa desde el año 1500 al 2002. El dataset contiene una grilla que cubren
+el area espacial desde latitud 30°N hasta 70°N y longitud 25°O hasta los 40°E. A su vez, 
+los años están dividos en 
+estaciones, siendo cuatro grillas por cada año. Los datos provienen de 
+*Luterbacher, J., Dietrich, D., Xoplaki, E., Grosjean, M., and Wanner, H., 2004(DOI:10.1126/science.1093877)* 
+y 
+*Xoplaki, E., Luterbacher, J., Paeth, H., Dietrich, D., Steiner N., Grosjean, M., and Wanner, H., 2005(DOI:10.1029/2005GL023424))*.
 
-Los datos originales surgen de la reconstrucción de la serie de tiempo de datos de temperatura para Europa desde el año 1500 al 2002. El dataset contiene una grilla de 9100 puntos, formados por 130 longitudes y 70 latitudes, en un rango que van desde latitud 30°N hasta 70°N y longitud 25°O hasta los 40°E. A su vez, los años están dividos en estaciones, siendo cuatro grillas por cada año. Los datos provienen de*Luterbacher, J., Dietrich, D., Xoplaki, E., Grosjean, M., and Wanner, H., 2004(DOI:10.1126/science.1093877)* y *Xoplaki, E., Luterbacher, J., Paeth, H., Dietrich, D., Steiner N., Grosjean, M., and Wanner, H., 2005(DOI:10.1029/2005GL023424))* MEJORAR CITAS o CITAR MEJOR.
+Para nuestro problema en particular, decidimos tomar la primavera de 1989 y circunscribir 
+el análisis a la región que pertenece a España. Recortamos el mapa en la latitud 35.61°N a
+43.99°N longitud 10.69°O a 4.48°E. Es importante aclarar que solamente los puntos de 
+tierra tienen datos de temperatura, mientras lo que están en el oceano son tipo NULL.  
 
-Para nuestro problema en particular, decidimos tomar la primavera de 1989 y circunscribir el análisis a la región que pertenece a España. Recortamos el mapa en la latitud 35.61°N a 43.99°N longitud 10.69°O a 4.48°E. Es importante aclarar que solamente los puntos de tierra tienen datos de temperatura, mientras lo que están en el oceano son tipo NULL.  
+## Preprocesamiento de los datos
 
-### Preprocesamiento de los datos
+Inicialmente estos datos se tomó el dataset de los papers citados previamente, el mismo 
+conssite en un archivo GDX que tiene contiene por linea 9100 puntos de temperatura
+correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
 
-ACÁ TODO EL LABURAZO QUE HICISTE NAHUEL
+>File: TT_Europe_Seasons_1500_2002.New.GDX
+>
+>Grid: 0.5° x 0.5°
+>
+>Spatial area: 25W - 40E und 30 - 70N
+>
+>Note: the date are valied for a 0.5x0.5deg box. The center of the box is
+>always on a xx.25 coordinate	
+>
+>Time period: Winter 1500 - Autumn 2002 
 
-Luego con los datos disponibles en csv para la primavera de 1989, filtramos el área correspondiente para la segmentación del territorio Español. Finalmente, para poder realizar un trabajo predictivo, retiramos puntos aleatoriamente de la grilla separando los datos en train y test. Se eligió la semilla 42, a los fines prácticos de mantener la reproducibilidad. Nuestro datos de entrenamiento tienen 163 puntos, mientras que los de test tienen 70 puntos. 
 
+![Representación de los datos en el dataset](content/figs/1_1_europe_temp_data.png)
 
-```
+Cómo se mencionó antes, se decidió tomar la primavera de 1989 para poder eliminar la
+componente temporal de nuestro proceso estocástico y centrarnos solo en el análisis 
+espacial. Para poder realizar este filtrado, primero debemos entender la naturaleza de los
+datos, el formato de los datos obtenidos es de una grilla que se obtuvo de aplicar una 
+proyección Equirectangular sobre el área cubierta mencionada anteriormente. Cada linea
+en el archivo GDX original representa una estación del año y el correspondiente año, donde
+vamos a encontrar el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70)
+etc, llenandose por longitudes desde la latitud más alta hasta la más baja. 
+
+Con esto, sabiendo la densidad de la grilla podemos convertir el vector de 9100 puntos en
+una matriz (grilla) de 70x130. Estos datos primeramente segmentados los vamos a convertir
+en un archivo csv que luego podamos ingestar en R para su posterior procesamiento.
+
+Una vez disponibilizado el archivo csv para la primavera de 1989, filtramos incialmente los
+valores _NaN_, dado que por construcción el dataset original tiene los cuerpos de agua con
+una referencia de _NaN_ o -999.99, ya que éste valor no tiene información alguna a nuestro
+análisis los retiramos. Luego de ello vamos a filtrar el área correspondiente para la 
+segmentación del territorio Español. 
+
+> Spain Boundary box
+> Lon: -10.59, 4.48
+> Lat: 35.61, 43.99
+
+Dado que esta grilla contiene puntos referentes a otros paises se realizó un proceso de 
+limpieza más exhaustivo para que los puntos del dataset estén contenidos dentro del 
+contorno del país. Para esto utilizamos un _shp_ de españa e iterativamente se fueron
+removiendo los puntos externos al pais.
+
+Finalmente, dado que este dataset es un dato tipo arial, realizamos una adaptación para
+poder utilizar las técnicas vistas en clase. Para ello retiramos aleatoriamente puntos
+dentro de la grilla. Esto nos da una suerte de datasets de train y test para validar 
+nuestras regresiones. 
+
+A fines de reproducibilidad, se eligió la semilla 42 en la segmentación de datos aleatoria,
+el dataset de training cuenta con el 70% del contenido del dataset inicial, dando una cuenta
+total de 163 puntos, mientras que los de test tienen 70 puntos. 
