@@ -13,9 +13,9 @@ library(geoR)
 library(spdep)
 
 setwd("C:/Users/pmach/OneDrive/Documentos/mcd230_ss_final/data")
-load(file = "spain_geodata_temperature_1989_spring.RData")
+load(file = "spain_preprocessed_data.RData")
 
-d = sp_data_final
+d = sp_data_final_clean
 coordinates(d) = ~longitude+latitude
 
 gd<-as.geodata(d)
@@ -24,10 +24,10 @@ class(gd)
 
 ## Estacionariedad de los datos
 
-Luego de haber analizado la autocorrelación de nuestros datos, pasamos a pensar si el proceso que los generó es estacionario o no. Con ayuda de un *plot* podemos rápidamente observar si hay tendencia tanto en x como en y, y la normalidad de nuestro proceso:
+Luego de haber analizado la autocorrelación de nuestros datos, tomamos el *dataset* resultante y pasamos a pensar si el proceso que generó los datos es estacionario o no. Con ayuda de un *plot* podemos rápidamente observar si hay tendencia tanto en x como en y, y la normalidad de nuestro proceso:
 
 ```{r trend}
-d = sp_data_final # guardamos el set de datos recortado en un objeto
+d = sp_data_final_clean # guardamos el set de datos recortado en un objeto
 coordinates(d) = ~longitude+latitude
 
 gd<-as.geodata(d) # lo pasamos a un objetivo geodata para poder graficarlo
@@ -70,9 +70,7 @@ plot(v_map_tend_y)
 
 ```
 
-Aún modelando la tendencia en y vemos en el variograma mapa que el proceso no se asimila a uno isotrópico. Nos preguntamos si se debía quizás a una tendencia en x que no estábamos observando, pero al modelar con ambas tendencias de forma lineal los resultados no cambian.
-
-Finalmente, resolvimos trabajar de manera direccional. 
+Aún modelando la tendencia en y vemos en el variograma mapa que el proceso no se asimila a uno isotrópico. Nos preguntamos si se debía quizás a una tendencia en x que no estábamos observando, pero al modelar con ambas tendencias de forma lineal los resultados no varían significativamente.
 
 ### Variograma empírico
 
@@ -91,7 +89,7 @@ Con este variograma nube vemos que a partir de un **h=8** la varianza de los dat
 A continuación computamos el variograma empírico de puntos con tendencia lineal entre las coordenadas.
 
 ```{r, results='hide', message = FALSE}
-vg_trend <- variog(gd, trend = "1st", uvec = seq(0,8,l = 25))
+vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7,l = 25))
 s1 = variog.mc.env(gd, obj = vg_trend)
 plot(vg_trend, env = s1)
 
@@ -100,11 +98,17 @@ plot(vg_trend, env = s1)
 Por otro lado, con la ayuda de un variograma con 4 direcciones distintas, podemos observar cómo el mismo cambia según la dirección que se elija.
 
 ```{r, results='hide', message = FALSE}
-vario.4 <- variog4(gd, max.dist = 8)
+vario.4 <- variog4(gd, max.dist = 7)
 plot(vario.4, lwd = 2)
 
 ```
 
-En función de todo lo analizado y observado gráficamente, decidimos ajustar el variograma teórico al variograma direccional  con dirección $\frac{3\pi}{4}$. Esta elección se sustenta no solo en elegir la dirección que más simétrica parece en el variograma mapa sin tendencia, sino también sobre el hecho de que la dirección de 135° es la que más estable parece.
+En función de todo lo analizado y observado gráficamente, decidimos proseguir ajustando el variograma teórico al modelo de bines con tendencia lineal en las coordenadas. 
+
+### Variograma teórico
+
+Si bien ya observando la forma del variograma empírico sabíamos que la función exponencial iba a ajustar bien a nuestros datos, decidimos utilizar *eye fit* para explorar otras opciones y acomodar los valores de los parámetros.
+
+
 
 
