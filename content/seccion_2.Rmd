@@ -112,6 +112,3 @@ sp_geo_data_clean <- as.geodata(cbind(sp_data_final_clean$longitude,sp_data_fina
 
 Eliminamos los desvíos negativos cuyo p-valor es menor al 0.05. De esta manera limpiamos a
 los datos de los valores atípicos con mayor disimilaridad. 
-
-
-

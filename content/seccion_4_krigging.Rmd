@@ -8,6 +8,27 @@ en latitud y longitud.
 * Los puntos extraidos de la grilla del dataset inicial que utilizamos como _validación_
 del modelo de krigging
 
-## Análisis iniciales
+## Modelos propuestos de krigging ordinario
 
+## Resultados obtenidos
 
+### Grilla de predicción
+
+### Datos de validación
+
+## Validación del método
+
+### Comparación con método de interpolación por K vecinos más cercanos
+
+### K-fold cross validation
+
+#### Leave-one-out
+
+holis
+
+| Estadístico | Krigging (Exp) | Krigging (Mat) |
+| --- |:---:|:---:|
+| MAE | 0 | 0 |
+| RMSE | 0 | 0 |
+| NRMSE | 0 | 0 |
+| $\rho$ | 0 | 0 |

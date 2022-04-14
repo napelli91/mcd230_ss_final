@@ -1,12 +1,15 @@
 if(!require(pacman)) install.packages("pacman")
 pacman::p_load(
     'gstat',
+    'ggplot2',
+    'ggpubr',
     'geoR',
     'spdep',
     'sp',
     'dplyr',
     'automap',
-    'metrics'
+    'Metrics',
+    'viridis'
 )
 
 ## librerias utilizadas
@@ -16,6 +19,8 @@ library(spdep)
 library(sp)
 library(dplyr)
 library(ggplot2)
+library(ggpubr)
+library(viridis)
 
 library(automap)
 library(Metrics)
@@ -23,13 +28,14 @@ library(FNN)
 
 ## Cargando datos limpios
 
-load('data/spain_geodata_temperature_1989_spring.RData.RData')
+load('data/spain_geodata_temperature_1989_spring.RData')
 load('data/spain_preprocessed_data.RData')
 
 validation.data <- sp_data_bin
 sp_data_final_clean = sp_data_final_clean
 sp_geo_data_clean = sp_geo_data_clean
 
+sp_data_final_clean = sp_data_final_clean %>% select(longitude,latitude,temp)
 
 rm(sp_data, sp_data_bin, sp_data_final)
 
@@ -44,11 +50,11 @@ plot(sp_geo_data_clean)
 
 ## convertimos a SpatialDataFrame
 
-coordinates(sp_data_final_clean) <- ~ latitude + longitude
+coordinates(sp_data_final_clean) <- ~ longitude + latitude
 
 ## Calculo del variograma con tendencia
 
-vg.emp <- variogram(temp~latitude+longitude, sp_data_final_clean, cutoff = 7)
+vg.emp <- variogram(temp ~ longitude + latitude, sp_data_final_clean, cutoff = 7)
 
 vg.emp.plot <- vg.emp %>% ggplot() +
                geom_point(aes(x = dist, y = gamma),
@@ -88,7 +94,7 @@ vg.fit.plot
 ## Alternativa
 
 # Choosing the best variogram
-vg.fit.alternative = autofitVariogram(temp~latitude+longitude,
+vg.fit.alternative = autofitVariogram(temp~longitude+latitude,
                              sp_data_final_clean,
                              model = c("Exp", "Sph" ,"Gau" ,"Mat"),
                              kappa = seq(0,2,0.05),
@@ -143,21 +149,22 @@ g.lat.max = 42
 
 grid.to.pred <- expand.grid(longitude = seq(g.lon.min, g.lon.max, by = 0.2),
                             latitude = seq(g.lat.min, g.lat.max, by	 = 0.2))
-View(grid.to.pred)
-class(grid.to.pred)
-gridded(grid.to.pred) <-  ~ latitude + longitude
+#View(grid.to.pred)
+#class(grid.to.pred)
+
+gridded(grid.to.pred) <-  ~ longitude + latitude
 plot(grid.to.pred)
 
 
 
 ## Ahora que generamos la grilla vamos a hacer el cokrirgging
 
-krig.fit <- krige(temp~latitude+longitude,
+krig.fit <- krige(temp ~ longitude + latitude,
                   locations = sp_data_final_clean,
                   newdata = grid.to.pred,
                   model = vg.fit)
 
-krig.alt.fit <- krige(temp~latitude+longitude,
+krig.alt.fit <- krige(temp ~ longitude + latitude,
                       locations = sp_data_final_clean,
                       newdata = grid.to.pred,
                       model = vg.best.fit)
@@ -198,14 +205,14 @@ krig.alt.fit %>% as.data.frame %>%
 
 validation.coords <- validation.data[,c(1,2)]
 
-coordinates(validation.coords) <- ~ latitude + longitude
+coordinates(validation.coords) <- ~ longitude + latitude
 
-krig.val.data <- krige(temp~latitude+longitude,
+krig.val.data <- krige(temp ~ longitude + latitude,
                        locations = sp_data_final_clean,
                        newdata = validation.coords,
                        model = vg.fit)
 
-krig.val.data.alt <- krige(temp~latitude+longitude,
+krig.val.data.alt <- krige(temp ~ longitude + latitude,
                        locations = sp_data_final_clean,
                        newdata = validation.coords,
                        model = vg.best.fit)
@@ -228,4 +235,136 @@ plot(k_vector, k_error_vector, type="l")
 
 
 
+## a partir de los modelos obtenidos vamos a crossvalidar las regresiones creadas
 
+tend = formula(temp ~ longitude + latitude)
+
+valcruz1 <- krige.cv(formula = tend,
+                     locations = sp_data_final_clean,
+                     model = vg.fit,
+                     nfold = 153,
+                     verbose = T,
+                     debug.level = 10)
+valcruz2 <- krige.cv(formula = tend,
+                     locations = sp_data_final_clean,
+                     model = vg.best.fit,
+                     nfold = 153,
+                     verbose = T,
+                     debug.level = 10)
+
+valcruz1
+valcruz2
+
+
+# Error medio de predicción.
+# Se espera que sea lo mas proximo a cero posible.
+mean(valcruz1$residual)
+mean(valcruz2$residual)
+
+# Error cuadratico medio de predicción.
+# Se espera que sea lo mas chico posible.
+mean(valcruz1$residual^2)
+mean(valcruz2$residual^2)
+
+# Error cuadrático medio normalizado.
+# Se espera que sea lo mas proximo a 1 posible.
+mean(valcruz1$zscore^2)
+mean(valcruz2$zscore^2)
+
+# Correlación lineal entre valores observados y predichos
+cor(valcruz1$observed, valcruz1$observed - valcruz1$residual)
+cor(valcruz2$observed, valcruz2$observed - valcruz2$residual)
+
+# Correlaci?n lineal entre valores observados y predichos
+par(mfrow = c(1,2))
+plot(valcruz1$observed,valcruz1$observed - valcruz1$residual,
+     xlab="Observados (Exp)",
+     ylab="Predichos (Exp)")
+plot(valcruz2$observed,valcruz2$observed - valcruz2$residual,
+     xlab="Observados (Mat)",
+     ylab="Predichos (Mat)")
+
+r1 <- valcruz1$observed - valcruz1$residual
+regresion1 <- lm(valcruz1$observed ~ r1, data = valcruz1)
+summary(regresion1)
+
+
+r2 <- valcruz2$observed - valcruz2$residual
+regresion2 <- lm(valcruz2$observed ~ r2, data = valcruz2)
+summary(regresion2)
+##################################
+
+
+krig.cv.plot1 <- valcruz1@data %>% ggplot(aes(x = observed, y = observed - residual)) +
+    geom_point(colour = "turquoise3",
+               shape = 15) +
+    labs( x = "Observados (Exp)",
+          y = "Predichos (Exp)") +
+    geom_smooth(formula = y ~ x,
+                method = lm,
+                aes(x = observed,
+                    y = observed - residual),
+                show.legend = T,
+                colour = "#cd0800",
+                fill = "#eb9c99")
+
+krig.cv.plot2 <- valcruz2@data %>% ggplot(aes(x = observed, y = observed - residual)) +
+    geom_point(colour = "turquoise3",
+               shape = 15) +
+    labs( x = "Observados (Mat)",
+          y = "Predichos (Mat)") +
+    geom_smooth(formula = y ~ x,
+                method = lm,
+                aes(x = observed,
+                    y = observed - residual),
+                show.legend = T,
+                colour = "#cd0800",
+                fill = "#eb9c99")
+
+ggarrange(krig.cv.plot1,
+          krig.cv.plot2,
+          ncol = 2,
+          nrow = 1)
+
+
+# data(world)
+# spain_shp <- world %>% filter(name_long == 'Spain') %>% dplyr::select(geom)
+#
+# ggplot() +
+#     geom_sf(data = spain_shp$geom) +
+#     geom_point(data = sp_data,
+#                aes(x = longitude,
+#                    y = latitude,
+#                    color = temp
+#                ),
+#                alpha = .5) +
+#     coord_sf(datum=st_crs(4326))
+
+
+polys = as(krig.fit,"SpatialPolygonsDataFrame")
+polys_sf = as(polys, "sf")
+points_sf = as(krig.fit, "sf")
+
+
+# Plot in original  projection (note that in this case the cells are squared):
+my_theme <- theme_bw() + theme(panel.ontop=TRUE, panel.background=element_blank())
+
+dens.plot.1 <- ggplot(polys_sf) +
+    geom_sf(aes(fill = var1.pred)) +
+    ggtitle("Valores predichos [Exp]") +
+    coord_sf(datum=st_crs(4326)) +
+    scale_fill_viridis(option = "magma", direction = -1)
+    # + my_theme
+
+polys = as(krig.best.fit,"SpatialPolygonsDataFrame")
+polys_sf = as(polys, "sf")
+points_sf = as(krig.fit, "sf")
+dens.plot.2 <- ggplot(polys_sf) +
+    geom_sf(aes(fill = var1.pred)) +
+    ggtitle("Valores predichos [Mat]") +
+    coord_sf(datum=st_crs(4326)) +
+    scale_fill_viridis(option = "magma", direction = -1)
+    # + my_theme
+
+dens.plot.1
+dens.plot.2

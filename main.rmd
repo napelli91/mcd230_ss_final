@@ -40,7 +40,7 @@ load(file = "./data/spain_geodata_temperature_1989_spring.RData")
 Para este trabajo tenemos un grupo grande de librerias a utilizar. Vamos a separar por su
 funcionalidad.
 
-```{r includes, include=T}
+```{r init, warning=FALSE, message=FALSE}
 ## librerias básicas
 library(dplyr)
 library(ggplot2)
