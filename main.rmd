@@ -15,7 +15,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 ```
 
 ***Inicialización de librerias***
@@ -54,7 +53,6 @@ library(rgdal)
 library(sp)
 library(spdep)
 
-
 ## Librerias auxiliares
 library(automap)
 library(FNN)
@@ -66,11 +64,12 @@ library(udunits2)
 
 ```{r, child='content/seccion_1.Rmd'}
 ```
-
 \newpage
 ```{r, child='content/seccion_2.Rmd'}
 ```
-
+\newpage
+```{r, child='content/seccion_3_variogramas.Rmd'}
+```
 \newpage
 ```{r, child='content/seccion_4_krigging.Rmd'}
 ```
@@ -78,6 +77,5 @@ library(udunits2)
 \newpage
 ```{r, child='content/seccion_5_preguntas_teoricas.Rmd'}
 ```
-
 \newpage
 
