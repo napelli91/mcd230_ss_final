@@ -45,15 +45,15 @@ plot(bin1, bin.cloud = T, main = "classical estimator")
 vario.4 <- variog4(gd, max.dist = 8)
 plot(vario.4, lwd = 2)
 
-#variograma con tendencia en y
-v_nube_tend_y <- variogram(temp~latitude+longitude, d, cloud=T)
-plot(v_nube_tend_y)
+#variograma con tendencia en x e y
+v_nube_tend <- variogram(temp~latitude+longitude, d, cloud=T)
+plot(v_nube_tend)
 
-v_map_tend_y <- variogram(temp~latitude+longitude, d, cutoff = 4, width = 1, map=T)
-plot(v_map_tend_y)
+v_map_tend <- variogram(temp~latitude+longitude, d, cutoff = 4, width = 1, map=T)
+plot(v_map_tend)
 #ver más parámetros para variogram?
-v_tend_y <- variogram(temp~latitude+longitude, d)
-plot(v_tend_y)
+v_tend <- variogram(temp~latitude+longitude, d)
+plot(v_tend)
 
 ## variograma empirico
 vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7, l = 20))
@@ -65,23 +65,35 @@ s1 = variog.mc.env(gd, obj = vg_trend)
 plot(vg_trend, env = s1)
 
 #ajusto variograma teórico
-vt_exp = fit.variogram(v_tend_y, vgm(2.19, "Exp", 0.78, 0), fit.method = 6)
+vt_exp = fit.variogram(v_tend, vgm(2.2, "Exp", 0.78, 0))#, fit.method = 6)
 vt_exp
-plot(v_tend_y, vt_exp)
+plot(v_tend, vt_exp)
 
-vt_mat = fit.variogram(v_tend_y, vgm(2.2, "Mat", 1, 0, kappa = 0.1), fit.kappa = T)
+vt_mat = fit.variogram(v_tend, vgm(2.05, "Mat", 0.28, 0, kappa = 1.8)
+                       , fit.kappa = T)
 vt_mat
-plot(v_tend_y, vt_mat)
+plot(v_tend, vt_mat)
 
-vt_esf = fit.variogram(v_tend_y, vgm(3, "Sph", 1.14, 0.03))
+vt_esf = fit.variogram(v_tend, vgm(2.02, "Sph", 1.50, 0))
 vt_esf
-plot(v_tend_y, vt_esf)
+plot(v_tend, vt_esf)
+
+vt_bes = fit.variogram(v_tend, vgm(2.1, "Bes", 0.42, 0))
+vt_bes #Besel
+plot(v_tend, vt_bes)
+
+vt_pen = fit.variogram(v_tend, vgm(2.03, "Pen", 1.87, 0))
+vt_pen #Pentaspherical
+plot(v_tend, vt_pen)
+
 
 #6 = OLS
 
 attr(vt_exp, 'SSErr')
 attr(vt_esf, 'SSErr')
 attr(vt_mat, 'SSErr')
+attr(vt_bes, 'SSErr')
+attr(vt_pen, 'SSErr')
 
 patos = eyefit(vg_trend)
 patos
