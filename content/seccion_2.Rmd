@@ -98,7 +98,7 @@ ver cuáles son los puntos atípicos cuya disimilaridad es sigficativa.
 $$IML_{Si} = \frac{z(Si)- \bar{z}}{S^2} \sum_{j=1 j \neq i}^{n}w_{ij}(z(s_j)- \bar{z})$$
 ```{r s2.moran, echo=TRUE}
 M<-moran.plot(sp_geo_data$data,pesos,zero.policy=F,col=3, quiet=T,labels=T,xlab="Temperatura", ylab="lag(Temperatura)")
-View(M)
+
 
 ML <- localmoran(sp_geo_data$data,pesos,alternative ="less")
 IML<-printCoefmat(data.frame(ML,row.names=sp_geo_data$Casos),check.names=FALSE)

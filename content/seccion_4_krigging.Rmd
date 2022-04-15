@@ -1,3 +1,54 @@
+```{r carlos, echo = F, include = F}
+
+load('../data/spain_geodata_temperature_1989_spring.RData')
+load('../data/spain_preprocessed_data.RData')
+
+validation.data <- sp_data_bin
+sp_data_final_clean = sp_data_final_clean
+sp_geo_data_clean = sp_geo_data_clean
+
+sp_data_final_clean = sp_data_final_clean %>% dplyr::select(longitude,latitude,temp)
+
+rm(sp_data, sp_data_bin, sp_data_final)
+
+## Calculamos el summary de los datos
+
+#summary(sp_data_final_clean)
+#summary(sp_geo_data_clean)
+
+## vemos los datos geo
+
+plot(sp_geo_data_clean)
+
+## convertimos a SpatialDataFrame
+
+coordinates(sp_data_final_clean) <- ~ longitude + latitude
+
+## Calculo del variograma con tendencia
+
+vg.emp <- variogram(temp ~ longitude + latitude, sp_data_final_clean, cutoff = 7)
+
+## calculamos los parametros del variograma fitteado
+
+vg.fit = fit.variogram(vg.emp,
+                       vgm(1, c("Exp", "Sph" ,"Gau" ,"Mat"), 2.15, 1))
+
+## Alternativa
+
+# Choosing the best variogram
+vg.fit.alternative = autofitVariogram(temp~longitude+latitude,
+                             sp_data_final_clean,
+                             model = c("Exp", "Sph" ,"Gau" ,"Mat"),
+                             kappa = seq(0,2,0.05),
+                             fix.values = c(NA),
+                             start_vals = c(0,1,2.5),
+                             verbose = F)
+vg.best.fit <- vg.fit.alternative$var_model
+
+attr(vg.best.fit, 'SSErr')
+attr(vg.fit, 'SSErr')
+```
+
 # Proceso de Krigging
 
 Ahora que tenemos los elementos necesarios en nuestro análisis vamos a a pasar a estimar
@@ -10,25 +61,251 @@ del modelo de krigging
 
 ## Modelos propuestos de krigging ordinario
 
+Para nuestro dataset, debido a que observamos una dependencia clara entre nuestra variable
+de interés (Temperatura promedio en superficie) y la métrica espacial, no podemos dar
+por sentado que exista un modelo donde exista una media desconocida $\mu_0$ tal que nuestro
+sistema se pueda describir como $Z(s)=\mu+\epsilon(s)$.
+
+Dada la tendencia observada se propone un modelo de krigging universal de la forma:
+
+$$
+\left\{
+    \begin{array}{rcl}
+        Z(\mathbf{s}) & = & \mu(\mathbf{s})+\epsilon(\mathbf{s})\\
+        \mu(\mathbf{s}) & = & \sum_{k}\beta_{k}f_{k}(\mathbf{s})
+    \end{array}
+\right. \,\text{,where }\mathbf{s}\in\mathbb{R}^2
+$$
+
+donde en nuestro caso consideraremos una tendencia lineal que modele nuestro sistema. A
+partir de esto, considerando los dos modelos de variograma propuestos vamos a generar 
+dos modelos de krigging y comparar sus resultados. Recordamos que los variogramas elegidos
+son los siguientes:
+
+| Modelo | Nugget | Sill | Range | $\kappa$ |
+|:---:|:---:|:---:|:---:|:---:|
+|`r as.character(vg.fit$model)` | 0 | `r vg.fit$psill` | `r vg.fit$range` | `r vg.fit$kappa` |
+|`r as.character(vg.best.fit$model)` | 0 | `r vg.best.fit$psill` | `r vg.best.fit$range` | `r vg.best.fit$kappa` |
+
+Previo a generar los modelos de krigging, debemos generar la grilla de predicción, como 
+se dijo anteriormente tomaremos una grilla de tamaño 0.2x0.2 de esta manera estaremos
+cubriendo puntos que los datos inicialmente no tenían. Para determinar la grilla, primero
+obtenemos de nuestros datos los límites:
+
+```{r s4.data.summary, echo = F}
+summary(sp_geo_data_clean)
+```
+
+Dado que si tomamos los límites máximos del _summary_  estaríamos considerando datos fuera
+de españa, con lo que vamos a definir un _boundary box_ de 1 punto menos en cada limite
+obtenido.
+
+```{r grid.def}
+## Una vez seleccionados los modelos vamos a crear una grilla de predicción
+## para ello vamos a tomar un sector interno del mapa de datos y vamos a analizar
+
+g.lon.min = -8
+g.lon.max = 1
+g.lat.min = 37
+g.lat.max = 42
+
+
+grid.to.pred <- expand.grid(longitude = seq(g.lon.min, g.lon.max, by = 0.2),
+                            latitude = seq(g.lat.min, g.lat.max, by	 = 0.2))
+gridded(grid.to.pred) <-  ~ longitude + latitude
+```
+
+A partir de esta grilla, tenemos ahora `r length(grid.to.pred)` puntos a predecir con
+nuestros modelos de krigging. Teniendo ya todo lo necesario podemos ajustar los modelos
+correspondientes
+
+```{r s4.krig.model, message = F}
+
+trend <- formula(temp ~ longitude + latitude)
+
+## Ahora que generamos la grilla vamos a hacer el cokrirgging
+
+krig.fit <- krige(formula = trend,
+                  locations = sp_data_final_clean,
+                  newdata = grid.to.pred,
+                  model = vg.fit,
+                  debug.level = -1)
+
+krig.alt.fit <- krige(formula = trend,
+                      locations = sp_data_final_clean,
+                      newdata = grid.to.pred,
+                      model = vg.best.fit,
+                      debug.level = -1)
+
+validation.coords <- validation.data[,c(1,2)]
+
+coordinates(validation.coords) <- ~ longitude + latitude
+
+krig.val.data <- krige(formula = trend,
+                       locations = sp_data_final_clean,
+                       newdata = validation.coords,
+                       model = vg.fit)
+
+krig.val.data.alt <- krige(formula = trend,
+                           locations = sp_data_final_clean,
+                           newdata = validation.coords,
+                           model = vg.best.fit)
+
+```
+
 ## Resultados obtenidos
+
+A partir de los modelos fiteados vamos a analizar las predicciones obtenidas sobre una 
+grilla de predicción creada anteriormente y luego con los datos del test de validación.
 
 ### Grilla de predicción
 
+A partir del krigging realizado sobre la grilla, obtenemos que nuestros datos predichos
+tienen la siguiente distribución espacial:
+
+```{r s4.grid.plot.m1, echo = F}
+polys = as(krig.fit,"SpatialPolygonsDataFrame")
+polys_sf = as(polys, "sf")
+points_sf = as(krig.fit, "sf")
+dens.plot.1 <- ggplot(polys_sf) +
+    geom_sf(aes(fill = var1.pred)) +
+    ggtitle("Valores predichos [Exp]") +
+    coord_sf(datum=st_crs(4326)) +
+    scale_fill_viridis(option = "magma", direction = -1)
+dens.plot.2 <- ggplot(polys_sf) +
+    geom_sf(aes(fill = var1.var)) +
+    ggtitle("Varianza de valores predichos [Exp]") +
+    coord_sf(datum=st_crs(4326)) +
+    scale_fill_viridis(option = "magma", direction = 1)
+
+ggarrange(dens.plot.1,
+          dens.plot.2,
+          ncol = 1,
+          nrow = 2)
+```
+
+Mientras que para segundo variograma propuesto
+
+```{r s4.grid.plot.m2, echo = F}
+polys = as(krig.alt.fit,"SpatialPolygonsDataFrame")
+polys_sf = as(polys, "sf")
+points_sf = as(krig.alt.fit, "sf")
+dens.plot.1 <- ggplot(polys_sf) +
+    geom_sf(aes(fill = var1.pred)) +
+    ggtitle("Valores predichos [Matern]") +
+    coord_sf(datum=st_crs(4326)) +
+    scale_fill_viridis(option = "magma", direction = -1)
+dens.plot.2 <- ggplot(polys_sf) +
+    geom_sf(aes(fill = var1.var)) +
+    ggtitle("Varianza de valores predichos [Matern]") +
+    coord_sf(datum=st_crs(4326)) +
+    scale_fill_viridis(option = "magma", direction = 1)
+
+ggarrange(dens.plot.1,
+          dens.plot.2,
+          ncol = 1,
+          nrow = 2)
+```
+
+
 ### Datos de validación
+
+```{r s4.val.plot, echo = F}
+val.data <- as.data.frame(cbind(validation.data$temp,
+                                krig.val.data$var1.pred,
+                                krig.val.data.alt$var1.pred))
+names(val.data) <- c("original", "Exponential", "Matern")
+
+fig.comp.val.1 <- val.data %>% melt(id.vars = "original") %>% ggplot() + 
+    geom_point(aes(x = original,
+                   y = value,
+                   colour = as.factor(variable))) +
+    scale_fill_discrete(name = "Model",
+                        labels = c("Exponential", "Matern")) +
+    labs(x = 'Original value',
+         y = 'Predicted value',
+         colour = "Model")
+
+fig.comp.val.1
+```
 
 ## Validación del método
 
 ### Comparación con método de interpolación por K vecinos más cercanos
 
+Para tomar 
+
 ### K-fold cross validation
 
-#### Leave-one-out
+Para validar los modelos propuestos se realizó un cross validation en configuración de
+_leave one out_ con lo que utilizamos 153 folds. 
 
-holis
+```{r s4.krig.cv, message = F}
+krig.cv1 <- krige.cv(formula = trend,
+                     locations = sp_data_final_clean,
+                     model = vg.fit,
+                     nfold = 153)
+krig.cv2 <- krige.cv(formula = trend,
+                     locations = sp_data_final_clean,
+                     model = vg.best.fit,
+                     nfold = 153)
+```
+
+
+Los estadísticos obtenidos de esta cross validación se resumen en la sigueinte tabla
 
 | Estadístico | Krigging (Exp) | Krigging (Mat) |
 | --- |:---:|:---:|
-| MAE | 0 | 0 |
-| RMSE | 0 | 0 |
-| NRMSE | 0 | 0 |
-| $\rho$ | 0 | 0 |
+| MAE | `r mean(krig.cv1$residual)` | `r mean(krig.cv2$residual)` |
+| RMSE | `r mean(krig.cv1$residual^2)` | `r mean(krig.cv2$residual^2)` |
+| NRMSE | `r mean(krig.cv1$zscore^2)` | `r mean(krig.cv2$zscore^2)` |
+| $\rho$ | `r cor(krig.cv1$observed, krig.cv1$observed - krig.cv1$residual)` | `r cor(krig.cv2$observed, krig.cv2$observed - krig.cv2$residual)` |
+
+
+```{r s4.reg.plot, echo = F}
+krig.cv.plot1 <- krig.cv1@data %>% ggplot(aes(x = observed, y = observed - residual)) +
+    geom_point(colour = "turquoise3",
+               shape = 15) +
+    labs( x = "Observados (Exp)",
+          y = "Predichos (Exp)") +
+    geom_smooth(formula = y ~ x,
+                method = lm,
+                aes(x = observed,
+                    y = observed - residual),
+                show.legend = T,
+                colour = "#cd0800",
+                fill = "#eb9c99")
+
+krig.cv.plot2 <- krig.cv2@data %>% ggplot(aes(x = observed, y = observed - residual)) +
+    geom_point(colour = "turquoise3",
+               shape = 15) +
+    labs( x = "Observados (Mat)",
+          y = "Predichos (Mat)") +
+    geom_smooth(formula = y ~ x,
+                method = lm,
+                aes(x = observed,
+                    y = observed - residual),
+                show.legend = T,
+                colour = "#cd0800",
+                fill = "#eb9c99")
+
+ggarrange(krig.cv.plot1,
+          krig.cv.plot2,
+          ncol = 2,
+          nrow = 1)
+```
+
+```{r s4.reg.1}
+
+r1 <- krig.cv1$observed - krig.cv1$residual
+regresion1 <- lm(krig.cv1$observed ~ r1, data = krig.cv1)
+summary(regresion1)
+```
+
+```{r s4.reg.2}
+r2 <- krig.cv2$observed - krig.cv2$residual
+regresion2 <- lm(krig.cv2$observed ~ r2, data = krig.cv2)
+summary(regresion2)
+
+```
+

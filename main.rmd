@@ -22,12 +22,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r require.libs, include=FALSE}
 if(!require(pacman)) install.packages("pacman")
 pacman::p_load(
-    'gstat',
+    'automap',
+    'dplyr',
     'geoR',
     'ggplot2',
+    'ggpubr',
+    'gstat',
     'spdep',
     'sp',
-    'dplyr',
     'automap',
     'rgdal',
     'udunit2'
@@ -44,12 +46,15 @@ funcionalidad.
 ## librerias básicas
 library(dplyr)
 library(ggplot2)
-library(raster)
+library(ggpubr)
 library(readr)
+library(reshape2)
 
 ## Librerias de geo estadística
+library(automap)
 library(geoR)
 library(gstat)
+library(raster)
 library(rgdal)
 library(sp)
 library(spdep)
@@ -60,6 +65,7 @@ library(automap)
 library(FNN)
 library(lattice)
 library(udunits2)
+library(viridis)
 
 ```
 
@@ -72,8 +78,12 @@ library(udunits2)
 ```
 
 \newpage
-```{r, child='content/seccion_4_krigging.Rmd'}
+```{r, child='content/seccion_3_variogramas.Rmd'}
 ```
+
+<!-- \newpage -->
+<!-- ```{r, child='content/seccion_4_krigging.Rmd'} -->
+<!-- ``` -->
 
 \newpage
 ```{r, child='content/seccion_5_preguntas_teoricas.Rmd'}
