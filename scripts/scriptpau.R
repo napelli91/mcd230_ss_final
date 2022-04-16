@@ -52,7 +52,7 @@ plot(v_nube_tend)
 v_map_tend <- variogram(temp~latitude+longitude, d, cutoff = 4, width = 1, map=T)
 plot(v_map_tend)
 #ver más parámetros para variogram?
-v_tend <- variogram(temp~latitude+longitude, d)
+v_tend <- variogram(temp~latitude+longitude, d, cutoff = 7)
 plot(v_tend)
 
 ## variograma empirico
@@ -85,6 +85,70 @@ plot(v_tend, vt_bes)
 vt_pen = fit.variogram(v_tend, vgm(2.03, "Pen", 1.87, 0))
 vt_pen #Pentaspherical
 plot(v_tend, vt_pen)
+
+
+##como lo quiere nahue
+vt_mat_2 = variogramLine(vt_mat, maxdist = max(v_tend$dist))
+vt_bes_2 = variogramLine(vt_bes, maxdist = max(v_tend$dist))
+vt_pen_2 = variogramLine(vt_pen, maxdist = max(v_tend$dist))
+
+vg.mat.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'white') +
+    geom_line(data = vt_mat_2,
+              colour = 'blue',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza') +
+    theme_dark()
+vg.mat.plot
+
+vg.bes.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'white') +
+    geom_line(data = vt_bes_2,
+              colour = 'yellow',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza') +
+    theme_dark()
+vg.bes.plot
+
+vg.pen.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'white') +
+    geom_line(data = vt_pen_2,
+              colour = 'green',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza') +
+    theme_dark()
+vg.pen.plot
+
+vg.all.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'white') +
+    geom_line(data = vt_mat_2,
+              colour = 'blue',
+              size = 1) +
+    geom_line(data = vt_bes_2,
+              colour = 'yellow',
+              size = 1) +
+    geom_line(data = vt_pen_2,
+              colour = 'green',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza') +
+    theme_dark()
+vg.all.plot
 
 
 #6 = OLS
