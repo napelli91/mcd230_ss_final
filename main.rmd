@@ -81,9 +81,9 @@ library(viridis)
 ```{r, child='content/seccion_3_variogramas.Rmd'}
 ```
 
-<!-- \newpage -->
-<!-- ```{r, child='content/seccion_4_krigging.Rmd'} -->
-<!-- ``` -->
+\newpage
+```{r, child='content/seccion_4_krigging.Rmd'}
+```
 
 \newpage
 ```{r, child='content/seccion_5_preguntas_teoricas.Rmd'}

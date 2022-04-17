@@ -1,4 +1,4 @@
-
+# Proceso de estimación de Variograma
 ```{r s2.setup, include=FALSE}
 
 load(file = "../data/spain_preprocessed_data.RData")
@@ -40,7 +40,7 @@ del apartado anterior. En cuanto al eje x (longitud), no vemos una tendencia dis
 a siemple vista. Finalmente, la distribución del proceso pareciera ser bimodal, lo cual 
 podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).  
 
-### Varianza del cambio
+## Varianza del cambio
 
 La primera aproximación que tomamos para estimar la varianza del cambio es realizar tanto
 el variograma nube como el variograma mapa. Para comenzar, graficamos ambos **sin tendencia** para 
@@ -103,7 +103,7 @@ uno isotrópico. Nos preguntamos si se debía quizás a una tendencia en x que n
 observando, pero al modelar con ambas tendencias de forma lineal los resultados no varían 
 significativamente.
 
-### Variograma empírico
+## Variograma empírico
 
 Para estimar la variabilidad del cambio espacial del proceso realizamos el variograma nube
 empírico, pero esta vez utilizando la función **variog**.
@@ -161,7 +161,7 @@ plot(vario.4, lwd = 2, main = 'Variograma según dirección')
 En función de todo lo analizado y observado gráficamente, decidimos proseguir ajustando el
 variograma teórico al modelo con tendencia lineal en las coordenadas. 
 
-### Variograma teórico
+## Variograma teórico
 
 Para elegir el modelo teórico que mejor ajuste a nuestros datos utilizamos la función 
 *fit.variogram*. Cabe aclarar que como ésta función admite como *input* solo
