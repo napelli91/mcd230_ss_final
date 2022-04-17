@@ -1,3 +1,18 @@
+---
+title: "Estadística Espacial - Práctica Final"
+author: "Achenbach, Paula; Salvo, Martin; Pelli, Nahuel"
+date: "4/17/2022"
+output:
+    bookdown::html_document2:
+        code_folding: show
+        df_print: paged
+        number_sections: false
+        fig_width: 9.6
+        fig_height: 8
+        fig_caption: true
+        fig_align: 'center'
+---
+
 # Cuestionario
 
 > Explique por qué es necesario desarrollar herramientas estadísticas específicas para el análisis de datos espaciales y
@@ -25,7 +40,7 @@ de los pozos petroleros) un mapa de potencial inicial y así ayudar al equipo de
 buscar el punto de acceso ideal para penetrar nuevos pozos.
 
 ```{r, echo = F, fig.align='center', fig.cap='Mapa de contorno de datos interpolados por kriging de potenciales de pozos petroleros. Los pozos actuales se marcan con un circulo', out.width='140%'}
-knitr::include_graphics('./contents/figs/5_1_krig_ex.png')
+knitr::include_graphics('./content/figs/5_1_krig_ex.png')
 ```
 
 > ¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elección?
@@ -58,3 +73,5 @@ empírico, podemos evaluar la *performance* de las mismas por distintos métodos
 Ponderado y Gaussiano con la Función de Máxima Verosimilitud.
 Nos interesa quedarnos con el variograma teórico que menor error tenga con respecto a los
 datos empíricos, ya que ese será el que mejor ajuste tenga. 
+
+

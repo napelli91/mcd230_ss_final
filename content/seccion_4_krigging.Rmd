@@ -1,4 +1,4 @@
-```{r carlos, echo = F, include = F}
+```{r s4.init.datasets, echo = F, include = F}
 
 load('../data/spain_geodata_temperature_1989_spring.RData')
 load('../data/spain_preprocessed_data.RData')
@@ -9,44 +9,9 @@ sp_geo_data_clean = sp_geo_data_clean
 
 sp_data_final_clean = sp_data_final_clean %>% dplyr::select(longitude,latitude,temp)
 
-rm(sp_data, sp_data_bin, sp_data_final)
-
-## Calculamos el summary de los datos
-
-#summary(sp_data_final_clean)
-#summary(sp_geo_data_clean)
-
-## vemos los datos geo
-
-plot(sp_geo_data_clean)
-
-## convertimos a SpatialDataFrame
-
 coordinates(sp_data_final_clean) <- ~ longitude + latitude
 
-## Calculo del variograma con tendencia
-
-vg.emp <- variogram(temp ~ longitude + latitude, sp_data_final_clean, cutoff = 7)
-
-## calculamos los parametros del variograma fitteado
-
-vg.fit = fit.variogram(vg.emp,
-                       vgm(1, c("Exp", "Sph" ,"Gau" ,"Mat"), 2.15, 1))
-
-## Alternativa
-
-# Choosing the best variogram
-vg.fit.alternative = autofitVariogram(temp~longitude+latitude,
-                             sp_data_final_clean,
-                             model = c("Exp", "Sph" ,"Gau" ,"Mat"),
-                             kappa = seq(0,2,0.05),
-                             fix.values = c(NA),
-                             start_vals = c(0,1,2.5),
-                             verbose = F)
-vg.best.fit <- vg.fit.alternative$var_model
-
-attr(vg.best.fit, 'SSErr')
-attr(vg.fit, 'SSErr')
+rm(sp_data, sp_data_bin, sp_data_final)
 ```
 
 # Proceso de Krigging
@@ -84,8 +49,8 @@ son los siguientes:
 
 | Modelo | Nugget | Sill | Range | $\kappa$ |
 |:---:|:---:|:---:|:---:|:---:|
-|`r as.character(vg.fit$model)` | 0 | `r vg.fit$psill` | `r vg.fit$range` | `r vg.fit$kappa` |
-|`r as.character(vg.best.fit$model)` | 0 | `r vg.best.fit$psill` | `r vg.best.fit$range` | `r vg.best.fit$kappa` |
+|`r as.character(vg.fit[2,]$model)` | 0 | `r vg.fit[2,]$psill` | `r vg.fit[2,]$range` | `r vg.fit[2,]$kappa` |
+|`r as.character(vg.best.fit[2,]$model)` | 0 | `r vg.best.fit[2,]$psill` | `r vg.best.fit[2,]$range` | `r vg.best.fit[2,]$kappa` |
 
 Previo a generar los modelos de krigging, debemos generar la grilla de predicción, como 
 se dijo anteriormente tomaremos una grilla de tamaño 0.2x0.2 de esta manera estaremos
@@ -163,18 +128,18 @@ grilla de predicción creada anteriormente y luego con los datos del test de val
 A partir del krigging realizado sobre la grilla, obtenemos que nuestros datos predichos
 tienen la siguiente distribución espacial:
 
-```{r s4.grid.plot.m1, echo = F}
+```{r, echo = F, fig.cap = 'Resultados kriging universal para modelo Esférico', fig.align='center'}
 polys = as(krig.fit,"SpatialPolygonsDataFrame")
 polys_sf = as(polys, "sf")
 points_sf = as(krig.fit, "sf")
 dens.plot.1 <- ggplot(polys_sf) +
     geom_sf(aes(fill = var1.pred)) +
-    ggtitle("Valores predichos [Exp]") +
+    ggtitle("Valores predichos [Sph]") +
     coord_sf(datum=st_crs(4326)) +
     scale_fill_viridis(option = "magma", direction = -1)
 dens.plot.2 <- ggplot(polys_sf) +
     geom_sf(aes(fill = var1.var)) +
-    ggtitle("Varianza de valores predichos [Exp]") +
+    ggtitle("Varianza de valores predichos [Sph]") +
     coord_sf(datum=st_crs(4326)) +
     scale_fill_viridis(option = "magma", direction = 1)
 
@@ -186,7 +151,7 @@ ggarrange(dens.plot.1,
 
 Mientras que para segundo variograma propuesto
 
-```{r s4.grid.plot.m2, echo = F}
+```{r, echo = F, fig.cap = 'Resultados kriging universal para modelo Matern', fig.align='center'}
 polys = as(krig.alt.fit,"SpatialPolygonsDataFrame")
 polys_sf = as(polys, "sf")
 points_sf = as(krig.alt.fit, "sf")
@@ -210,30 +175,106 @@ ggarrange(dens.plot.1,
 
 ### Datos de validación
 
-```{r s4.val.plot, echo = F}
+Así también vamos a tomar los datos que separamos como *validación* y utilizamos el modelo
+propuesto anteriormente para interpolar estos datos y compararlos con el dato inicial.
+
+En la gráfica podemos ver que ambos modelos propuestos tienen una aproximación con una
+varíanza respecto al valor observado pero que mantenemos una tendencia lineal.
+
+```{r, echo = F, fig.cap = 'Datos observados versus datos interpolados por los modelos.', fig.align='center'}
 val.data <- as.data.frame(cbind(validation.data$temp,
                                 krig.val.data$var1.pred,
                                 krig.val.data.alt$var1.pred))
-names(val.data) <- c("original", "Exponential", "Matern")
+names(val.data) <- c("original", "Spherical", "Matern")
 
 fig.comp.val.1 <- val.data %>% melt(id.vars = "original") %>% ggplot() + 
     geom_point(aes(x = original,
                    y = value,
                    colour = as.factor(variable))) +
+    geom_smooth(formula = y ~ x,
+                method = lm,
+                aes(x = original,
+                    y = value,
+                    colour = as.factor(variable),
+                    fill = as.factor(variable)),
+                show.legend = T) +
     scale_fill_discrete(name = "Model",
-                        labels = c("Exponential", "Matern")) +
-    labs(x = 'Original value',
-         y = 'Predicted value',
+                        labels = c("Spherical", "Matern")) +
+    labs(x = 'Valor original',
+         y = 'Valor interpolado',
          colour = "Model")
 
 fig.comp.val.1
 ```
 
+A partir de estos valores podemos determinar además determinar los errores de
+interpolación. Para esto vamos a considerar el RMSE
+
+```{r, echo = F}
+krig.err.1 <- sqrt(mean((validation.data$temp - krig.val.data$var1.pred)^2))
+krig.err.2 <- sqrt(mean((validation.data$temp - krig.val.data.alt$var1.pred)^2))
+```
+
+| Modelo | RMSE |
+|:---:|:---:|
+|`r vg.fit$model` | `r krig.err.1`
+|`r vg.best.fit$model` | `r krig.err.2`
+
 ## Validación del método
 
 ### Comparación con método de interpolación por K vecinos más cercanos
 
-Para tomar 
+Anteriormente utilizamos krigging para poder interpolar los valores restantes en nuestra 
+grilla, a partir de ello se genera un heatmap de las predicciones donde podemos ver el 
+comportamiento de la variable de interés sobre nuestros nuevos puntos, por construcción
+estaremos viendo puntos intermedios entre nuestro puntos iniciales que quizás no teníamos
+suficiente información para asumir su valor. 
+
+Por esto, proponemos evaluar primeramente el resultado obtenido si se hubiese utilizado
+a KNN como método de interpolación de los datos. Veremos como se comporta el RMSE de este
+método en función de la cantidad de vecinos a considerar en la interpolación.
+
+```{r s4.knn.interpol, warning = F}
+# K-nearest neighbours
+# Cantidad de vecinos de 1 a 20 vecinos
+k_vector = seq(1, 20)
+k_error_vector = c()
+
+## Calculamos el error RMSE de krigging
+kriging_error = sqrt(mean((validation.data$temp - krig.val.data$var1.pred)^2))
+
+
+for (k in k_vector){
+    knn_model = knn.reg(sp_data_final_clean@coords,
+                        test = NULL,
+                        sp_data_final_clean$temp,
+                        k = k)
+    k_error = sqrt(mean((sp_data_final_clean$temp - knn_model$pred)^2))
+    k_error_vector = c(k_error_vector, k_error)
+
+}
+
+knn.err <- data.frame(k = k_vector, rmse_knn = k_error_vector, rmse_krig = kriging_error)
+
+knn.inter.fig <- knn.err %>% melt(id.vars = 'k') %>% ggplot(aes(x = k,
+                                                                y = value,
+                                                                colour = as.factor(variable))) +
+    geom_line(size = 1) +
+    labs( x = 'Cantidad de vecinos',
+          y = 'RMSE de interpolación')
+
+```
+
+```{r, echo = F, fig.cap = "Error de interpolación vs #Vecinos", fig.align='center'}
+knn.inter.fig
+```
+
+Del gráfico observamos que el error mínimo de interpolación lo obtenemos utilizando 4
+vecinos para interpolar es de `r min(k_error_vector)`. Mientras que utilizando el método
+de krigging obtenemos un RMSE de `r kriging_error`.
+
+Con esto vemos que tenemos una mejora de casí 1 punto porcentual en el error respecto a la
+máxima variabilidad de los datos presentados.
 
 ### K-fold cross validation
 
@@ -252,22 +293,24 @@ krig.cv2 <- krige.cv(formula = trend,
 ```
 
 
-Los estadísticos obtenidos de esta cross validación se resumen en la sigueinte tabla
+Los estadísticos obtenidos de esta cross validación se resumen en la siguiente tabla
 
-| Estadístico | Krigging (Exp) | Krigging (Mat) |
+| Estadístico | Krigging (Sph) | Krigging (Mat) |
 | --- |:---:|:---:|
 | MAE | `r mean(krig.cv1$residual)` | `r mean(krig.cv2$residual)` |
 | RMSE | `r mean(krig.cv1$residual^2)` | `r mean(krig.cv2$residual^2)` |
 | NRMSE | `r mean(krig.cv1$zscore^2)` | `r mean(krig.cv2$zscore^2)` |
 | $\rho$ | `r cor(krig.cv1$observed, krig.cv1$observed - krig.cv1$residual)` | `r cor(krig.cv2$observed, krig.cv2$observed - krig.cv2$residual)` |
 
+Además podemos visualizar el comportamiento de los datos observados y predichos, en este 
+vemos hay una buena tendencia lineal entre los datos observados y los datos predichos.
 
-```{r s4.reg.plot, echo = F}
+```{r, echo = F, fig.cap = 'Comportamiento de los residuos obtenidos en el proceso de Cross validation.', fig.align='center'}
 krig.cv.plot1 <- krig.cv1@data %>% ggplot(aes(x = observed, y = observed - residual)) +
     geom_point(colour = "turquoise3",
                shape = 15) +
-    labs( x = "Observados (Exp)",
-          y = "Predichos (Exp)") +
+    labs( x = "Observados (Sph)",
+          y = "Predichos (Sph)") +
     geom_smooth(formula = y ~ x,
                 method = lm,
                 aes(x = observed,
@@ -295,6 +338,8 @@ ggarrange(krig.cv.plot1,
           nrow = 1)
 ```
 
+A partir de esto analizamos y vemos que en ambas regresiones tenemos casi una pendiente 1.
+
 ```{r s4.reg.1}
 
 r1 <- krig.cv1$observed - krig.cv1$residual
@@ -309,3 +354,5 @@ summary(regresion2)
 
 ```
 
+Con esto vemos que ambos modelos propuestos nos ayudan a predecir con una precisión 
+aceptable los datos faltantes en nuestro dataset.

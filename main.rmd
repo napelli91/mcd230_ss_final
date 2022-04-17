@@ -3,13 +3,17 @@ title: "Estadística Espacial - Práctica Integradora"
 author: "Achenbach, Paula; Salvo, Martin; Pelli, Nahuel"
 date: "3/19/2022"
 output:
-    html_document:
+    bookdown::html_document2:
         code_folding: show
         df_print: paged
         toc: true
         number_sections: true
+        fig_width: 9.6
+        fig_height: 8
+        fig_caption: true
+        fig_align: 'center'
         toc_float:
-          collapsed: false
+          collapsed: True
           smooth_scroll: false
 ---
 
@@ -19,6 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ***Inicialización de librerias***
+
 ```{r require.libs, include=FALSE}
 if(!require(pacman)) install.packages("pacman")
 pacman::p_load(
@@ -84,10 +89,3 @@ library(viridis)
 \newpage
 ```{r, child='content/seccion_4_krigging.Rmd'}
 ```
-
-\newpage
-```{r, child='content/seccion_5_preguntas_teoricas.Rmd'}
-```
-
-\newpage
-

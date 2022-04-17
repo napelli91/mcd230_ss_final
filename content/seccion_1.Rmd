@@ -31,8 +31,9 @@ correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
 >
 >Time period: Winter 1500 - Autumn 2002 
 
-
-![Representación de los datos en el dataset](content/figs/1_1_europe_temp_data.png)
+```{r, echo = F, fig.align = 'center', fig.cap = 'Datos originales.', out.width='100%'}
+knitr::include_graphics('./content/figs/1_1_europe_temp_data.png')
+```
 
 Cómo se mencionó antes, se decidió tomar la primavera de 1989 para poder eliminar la
 componente temporal de nuestro proceso estocástico y centrarnos solo en el análisis 
@@ -54,7 +55,9 @@ análisis los retiramos. Luego de ello vamos a filtrar el área correspondiente 
 segmentación del territorio Español. 
 
 > Spain Boundary box
+> 
 > Lon: -10.59, 4.48
+>
 > Lat: 35.61, 43.99
 
 Dado que esta grilla contiene puntos referentes a otros paises se realizó un proceso de 
@@ -62,11 +65,26 @@ limpieza más exhaustivo para que los puntos del dataset estén contenidos dentr
 contorno del país. Para esto utilizamos un _shp_ de españa e iterativamente se fueron
 removiendo los puntos externos al pais.
 
+```{r, echo = F, fig.align='center', fig.cap='Representación de los datos en el dataset', out.width='140%'}
+knitr::include_graphics('./content/figs/1_2_arial_data.png')
+```
+
 Finalmente, dado que este dataset es un dato tipo arial, realizamos una adaptación para
 poder utilizar las técnicas vistas en clase. Para ello retiramos aleatoriamente puntos
 dentro de la grilla. Esto nos da una suerte de datasets de train y test para validar 
 nuestras regresiones. 
 
+```{r, echo = F, fig.align='center', fig.cap='Separación de los datos', out.width='140%'}
+knitr::include_graphics('./content/figs/1_3_data_splitting.png')
+```
+
 A fines de reproducibilidad, se eligió la semilla 42 en la segmentación de datos aleatoria,
 el dataset de training cuenta con el 70% del contenido del dataset inicial, dando una cuenta
-total de 163 puntos, mientras que los de test tienen 70 puntos. 
+total de 163 puntos, mientras que los de test tienen 70 puntos.
+
+Estos datos finalmente fueron guardados como _Data.Frame_ y como _GeoData.Data.Frame_ para
+poder ser analizado posteriormente.
+
+En las siguientes secciones se analizará a partir de los datos de _training_ y se 
+interpolara mediante el método de _kriging_ sobre los datos de _testing_ para poder validar
+los resultados.

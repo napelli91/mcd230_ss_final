@@ -32,13 +32,14 @@ g1 = ggplot(dat_gg_mg) +
     geom_hline(yintercept = 20, colour = "purple") +
     ylab("Estadístico") +
     xlab("Máxima distancia de vecinos")+
-    theme(legend.position = "bottom", legend.justification = c("right", "top"))+
-    ggtitle("Estadísticos de Moran y Geary según distancia de vecinos")
+    theme(legend.position = "bottom", legend.justification = c("right", "top"))
 
 grilla1 <- dnearneigh(pixel,0,2)
 grilla2 <- dnearneigh(pixel,0,6)
 
 ```
+
+# Analísis iniciales
 
 ## Descripción del problema y autocorrelación
 
@@ -67,8 +68,7 @@ Ahora bien, para dar una idea de la sensibilidad del parámetro con una distanci
 de 2° se consiguen 25 vecinos en promedio por punto, mientras que extendiendo esa distancia
 máxima a 6° se consiguen 126 vecinos en promedio. 
 
-```{r s2.variabilidad, echo=FALSE}
-## Add title here "variabilidad segun nivel de vecinos"
+```{r, echo=FALSE, fig.cap = "variabilidad según nivel de vecinos", fig.align='center'}
 par(mfrow=c(1,2))
 plot(grilla1 ,pixel)
 plot(grilla2 ,pixel,col=alpha("red",0.9))
@@ -83,11 +83,11 @@ cómo Geary se vuelven más significativos hasta una distancia máxima de 3° pa
 con una pendiente cada vez menos pronunciada hasta los 8° de distancia máxima. Por eso
 entendemos que los estadísticos parecerían tener cierta estabilidad en el rango que va de 2° a 4° de distancia máxima. 
 
-```{r s2.comparativa, echo=FALSE}
+```{r, echo=FALSE, fig.cap = 'Estadísticos de Moran y Geary según distancia de vecinos', fig.align='center'}
 g1
 ```
 
-### Índice de Moran Local y detección de puntos atípicos
+## Índice de Moran Local y detección de puntos atípicos
 
 En el caso del problema provisto de temperaturas, el estadístico C de Geary con `r geary_test$estimate[1]`
 nos está hablando de una correlación positiva. Es decir, a puntos de alta temperatura le 
@@ -96,19 +96,45 @@ baja temperatura o temperatura media. Con el procedimiento de Moran Local proced
 ver cuáles son los puntos atípicos cuya disimilaridad es sigficativa. 
 
 $$IML_{Si} = \frac{z(Si)- \bar{z}}{S^2} \sum_{j=1 j \neq i}^{n}w_{ij}(z(s_j)- \bar{z})$$
-```{r s2.moran, echo=TRUE}
-M<-moran.plot(sp_geo_data$data,pesos,zero.policy=F,col=3, quiet=T,labels=T,xlab="Temperatura", ylab="lag(Temperatura)")
+
+```{r, echo=TRUE, fig.cap = 'Gráfico de dispersión de Moran para nuestros datos', fig.align='center'}
+M <- moran.plot(sp_geo_data$data,
+              pesos,
+              zero.policy = F,
+              col = 3,
+              quiet = T, 
+              labels = T,
+              xlab = "Temperatura",
+              ylab = "lag(Temperatura)")
+```
 
 
-ML <- localmoran(sp_geo_data$data,pesos,alternative ="less")
-IML<-printCoefmat(data.frame(ML,row.names=sp_geo_data$Casos),check.names=FALSE)
+```{r s2.moran.p2, warning = F, rows.print = 20, layout="l-body-outset"}
+ML <- localmoran(sp_geo_data$data, pesos, alternative ="less")
+IML <- data.frame(ML)
 
-neg_Moran_Local <- subset(IML, Pr.z...E.Ii.. < 0.05 & Z.Ii < 0)
-neg_IML <- as.numeric(rownames(neg_Moran_Local))
+names(IML) <- c('Ii', 'E.Ii', 'Var.Ii', 'Z.Ii', 'Prob')
 
-sp_data_final_clean <- sp_data_final[-c(neg_IML), ]
-sp_geo_data_clean <- as.geodata(cbind(sp_data_final_clean$longitude,sp_data_final_clean$latitude,sp_data_final_clean$temp))
+IML %>% arrange( Prob, Z.Ii )
+
 ```
 
 Eliminamos los desvíos negativos cuyo p-valor es menor al 0.05. De esta manera limpiamos a
 los datos de los valores atípicos con mayor disimilaridad. 
+
+```{r s2.moran.p3, echo=TRUE}
+neg_Moran_Local <- subset(IML, Prob < 0.05 & Z.Ii < 0)
+neg_IML <- as.numeric(rownames(neg_Moran_Local))
+
+neg_IML
+```
+
+A partir de los indices obtenidos, se procede a realizar el subset del dataset que será
+utilizado en el análisis posterior.
+
+```{r s2.moran.p4, echo=TRUE}
+sp_data_final_clean <- sp_data_final[-c(neg_IML), ]
+sp_geo_data_clean <- as.geodata(cbind(sp_data_final_clean$longitude,
+                                      sp_data_final_clean$latitude,
+                                      sp_data_final_clean$temp))
+```
