@@ -1,6 +1,15 @@
 # mcd230_ss_final
 práctica de estadística espacial y geoestadística
 
+## Como ver el informe
+
+En caso de querer acceder al informe es necesario descargar el archivo 
+[Informe_final_Achenbach_Salvo_Pelli.html](./informe_final_Achenbach_Salvo_Pelli.html)
+
+En caso de querer replicar los resultados obtenidos es necesario renderizar el
+archivo rmd correspondiente. Se debe tener en cuenta que para poder renderizar
+correctamente el informe será necesario tener las librerías necesarias, para 
+ello referir a la siguiente sección
 ## Como usar el repositorio
 
 el orden del repositorio es por carpetas
@@ -10,9 +19,7 @@ el orden del repositorio es por carpetas
  |-> data/ # datasets como RDS object para cargar en el entorno.
  | 	|-> Europa/
  |	|	|...
- |	|-> Pajaritos/
- |	|	|...
- |-> scripts/ #Scripts de an?lisis
+ |-> scripts/ #Scripts de análisis
  |	|...
  |-> content/ #Sectores del informe
  |	|...
