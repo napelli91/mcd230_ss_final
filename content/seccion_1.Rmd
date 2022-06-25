@@ -1,23 +1,23 @@
-# Descripción del dataset y procesamiento de datos
+# Descripción del *dataset* y procesamiento de los datos
 
 Los datos originales surgen de la reconstrucción de la serie de tiempo de datos de 
-temperatura para Europa desde el año 1500 al 2002. El dataset contiene una grilla que cubren
-el area espacial desde latitud 30°N hasta 70°N y longitud 25°O hasta los 40°E. A su vez, 
+temperatura para Europa para el intervalo de tiempo que va desde el año 1500 al 2002. El *dataset* contiene una grilla que cubre
+el área espacial desde latitud 30°N hasta 70°N y longitud 25°O hasta los 40°E. A su vez, 
 los años están dividos en 
-estaciones, siendo cuatro grillas por cada año. Los datos provienen de 
+estaciones, teniendo finalmente cuatro grillas por cada año. Los datos provienen de 
 *Luterbacher, J., Dietrich, D., Xoplaki, E., Grosjean, M., and Wanner, H., 2004(DOI:10.1126/science.1093877)* 
 y 
 *Xoplaki, E., Luterbacher, J., Paeth, H., Dietrich, D., Steiner N., Grosjean, M., and Wanner, H., 2005(DOI:10.1029/2005GL023424))*.
 
 Para nuestro problema en particular, decidimos tomar la primavera de 1989 y circunscribir 
-el análisis a la región que pertenece a España. Recortamos el mapa en la latitud 35.61°N a
-43.99°N longitud 10.69°O a 4.48°E. Es importante aclarar que solamente los puntos de 
-tierra tienen datos de temperatura, mientras lo que están en el oceano son tipo NULL.  
+el análisis a la región que pertenece a España, por lo que recortamos el mapa en la latitud 35.61°N a
+43.99°N longitud 10.69°O a 4.48°E. Es importante aclarar que solamente los puntos en 
+tierra tienen datos de temperatura, mientras que los que están en el océano son de tipo NULL.  
 
 ## Preprocesamiento de los datos
 
-Inicialmente estos datos se tomó el dataset de los papers citados previamente, el mismo 
-conssite en un archivo GDX que tiene contiene por linea 9100 puntos de temperatura
+Inicialmente estos datos fueron tomados del *dataset* de los *papers* citados previamente, el mismo 
+consiste en un archivo GDX que tiene contiene por linea 9100 puntos de temperatura
 correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
 
 >File: TT_Europe_Seasons_1500_2002.New.GDX
@@ -31,42 +31,51 @@ correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
 >
 >Time period: Winter 1500 - Autumn 2002 
 
+```{r, echo = F, fig.align = 'center', fig.cap = 'Datos originales.', out.width='100%'}
+knitr::include_graphics('./content/figs/1_1_europe_temp_data.png')
+```
 
-![Representación de los datos en el dataset](content/figs/1_1_europe_temp_data.png)
-
-Cómo se mencionó antes, se decidió tomar la primavera de 1989 para poder eliminar la
+Como se mencionó previamente, se decidió tomar la primavera de 1989 para poder eliminar la
 componente temporal de nuestro proceso estocástico y centrarnos solo en el análisis 
 espacial. Para poder realizar este filtrado, primero debemos entender la naturaleza de los
 datos, el formato de los datos obtenidos es de una grilla que se obtuvo de aplicar una 
 proyección Equirectangular sobre el área cubierta mencionada anteriormente. Cada linea
-en el archivo GDX original representa una estación del año y el correspondiente año, donde
-vamos a encontrar el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70)
-etc, llenandose por longitudes desde la latitud más alta hasta la más baja. 
+en el archivo GDX original representa una estación del año y el correspondiente año donde, por ejemplo, el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70), y así sucesivamente, llenándose por longitudes desde la latitud más alta hasta la más baja. 
 
-Con esto, sabiendo la densidad de la grilla podemos convertir el vector de 9100 puntos en
+Sabiendo la densidad de la grilla podemos convertir el vector de 9100 puntos en
 una matriz (grilla) de 70x130. Estos datos primeramente segmentados los vamos a convertir
-en un archivo csv que luego podamos ingestar en R para su posterior procesamiento.
+en un archivo *csv* que luego podamos ingresar en R para su posterior procesamiento.
 
-Una vez disponibilizado el archivo csv para la primavera de 1989, filtramos incialmente los
-valores _NaN_, dado que por construcción el dataset original tiene los cuerpos de agua con
-una referencia de _NaN_ o -999.99, ya que éste valor no tiene información alguna a nuestro
-análisis los retiramos. Luego de ello vamos a filtrar el área correspondiente para la 
-segmentación del territorio Español. 
+Una vez que tenemos los datos para nuestra estación y año elegidos, filtramos algunos valores: datos con valor -999,99, que no aportan a nuestro análisis; y datos _NaN_ que, como mencionamos previamente, son datos correspondientes a superficies acuáticas. Luego de ello tomamos el área correspondiente al territorio Español. 
 
 > Spain Boundary box
+> 
 > Lon: -10.59, 4.48
+>
 > Lat: 35.61, 43.99
 
-Dado que esta grilla contiene puntos referentes a otros paises se realizó un proceso de 
-limpieza más exhaustivo para que los puntos del dataset estén contenidos dentro del 
-contorno del país. Para esto utilizamos un _shp_ de españa e iterativamente se fueron
-removiendo los puntos externos al pais.
+Dado que esta grilla contiene puntos referentes a otros países, se realizó un proceso de 
+limpieza más exhaustivo de manera que los puntos del *dataset* estén contenidos dentro del 
+contorno del país elegido. Para esto utilizamos un _shp_ de España e iterativamente removimos los puntos externos al pais.
 
-Finalmente, dado que este dataset es un dato tipo arial, realizamos una adaptación para
-poder utilizar las técnicas vistas en clase. Para ello retiramos aleatoriamente puntos
-dentro de la grilla. Esto nos da una suerte de datasets de train y test para validar 
+```{r, echo = F, fig.align='center', fig.cap='Representación de los datos en el dataset', out.width='140%'}
+knitr::include_graphics('./content/figs/1_2_arial_data.png')
+```
+
+Por último, dado que este *dataset* es un dato tipo arial, realizamos una adaptación para
+poder utilizar las técnicas vistas en clase: retiramos aleatoriamente puntos
+dentro de la grilla. Esto nos da una suerte de *datasets* de *train* y *test* para validar 
 nuestras regresiones. 
 
-A fines de reproducibilidad, se eligió la semilla 42 en la segmentación de datos aleatoria,
-el dataset de training cuenta con el 70% del contenido del dataset inicial, dando una cuenta
-total de 163 puntos, mientras que los de test tienen 70 puntos. 
+```{r, echo = F, fig.align='center', fig.cap='Separación de los datos', out.width='140%'}
+knitr::include_graphics('./content/figs/1_3_data_splitting.png')
+```
+
+Para poder reproducir nuestro análisis, tomamos un valor de semilla igual a 42 en la segmentación de datos aleatoria. El resultado es un *dataset* de *training* que cuenta con el 70% del contenido del *dataset* inicial, lo cual equivale a un total de 163 puntos. Por el otro lado, el *dataset* de *test* tiene 70 puntos.
+
+Finalmente, guardamos los datos en formato _Data.Frame_ y  _GeoData.Data.Frame_, para
+poder analizarlos posteriormente.
+
+En las siguientes secciones realizaremos el análisis a partir de los datos de _training_, y se 
+interpolará mediante el método de _kriging_ sobre los datos de _testing_ para poder validar
+los resultados.

@@ -12,9 +12,11 @@ tinytex
 xfun
 yaml
 rmarkdown
+automap
 dplyr
 geoR
 ggplot2
+ggpubr
 ggmap
 gstat
 leaflet
@@ -23,3 +25,5 @@ RColorBrewer
 spdep
 sp
 sf
+rgdal
+udunit2

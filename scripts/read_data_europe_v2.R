@@ -6,6 +6,7 @@ library(raster)
 library(geoR)
 library(sf)
 library(spData)
+library(viridis)
 
 spain_bbox = c(-10.59,35.61,4.48,43.99)
 france_bbox = c(-5.49,41.94,8.57,51.36)
@@ -13,8 +14,8 @@ france_bbox = c(-5.49,41.94,8.57,51.36)
 csv_loc = "data/europe-temp/europe_temp_spring_1989.csv"
 
 data <- read.csv(csv_loc)
-data <- data %>% dplyr::select(-X)
-names(data) <- c('latitude', 'longitude', 'temp')
+data <- data %>% dplyr::select(-X) %>% dplyr::select(Longitude, Latitude, X1989_Primavera)
+names(data) <- c('longitude', 'latitude', 'temp')
 
 
 data(world)
@@ -52,13 +53,16 @@ sp_data <- sp_data %>% filter(!between(longitude, -1.9, 4) | !between(latitude, 
 sp_data <- sp_data %>% filter(!between(longitude, 0, 4) | !between(latitude, 8.9, 40.6))
 
 ggplot() +
-    geom_sf(data = spain_shp$geom) +
+    geom_sf(data = spain_shp$geom,
+            fill = NA,
+            size = 1.5) +
     geom_point(data = sp_data,
                aes(x = longitude,
                    y = latitude,
                    color = temp
                ),
                alpha = .5) +
+    scale_color_viridis(option = "magma", direction = -1) +
     coord_sf(datum=st_crs(4326))
 
 
@@ -68,6 +72,30 @@ smp_size <- floor(0.7 * nrow(sp_data))
 ## set the seed to make your partition reproducible
 set.seed(42)
 train_ind <- sample(seq_len(nrow(sp_data)), size = smp_size)
+
+
+ggplot() +
+    geom_sf(data = spain_shp$geom,
+            fill = NA,
+            size = 1.5) +
+    geom_point(data = sp_data %>% mutate(is_train = if_else(row_number() %in% train_ind,
+                                                            'Train',
+                                                            'Testing')
+                                         ),
+               aes(x = longitude,
+                   y = latitude,
+                   colour = as.factor(is_train)
+               ),
+               alpha = 1,
+               size = 2,
+               shape = 16) +
+    # scale_colour_discrete(name = "Data Type",
+    #                     labels = c("Training", "Testing")) +
+    facet_wrap(vars(is_train))+
+    labs(x = 'Longitud',
+         y = 'Latitud',
+         colour = "Data type")+
+    coord_sf(datum=st_crs(4326))
 
 sp_data_final <- sp_data[train_ind, ]
 sp_data_bin <- sp_data[-train_ind, ]

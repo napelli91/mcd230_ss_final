@@ -1,120 +1,171 @@
----
-title: "Parte 3: Variogramas"
-output:
-  html_document:
-    df_print: paged
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-library(gstat)
-library(geoR)
-library(spdep)
-
-setwd("C:/Users/pmach/OneDrive/Documentos/mcd230_ss_final/data")
-load(file = "spain_preprocessed_data.RData")
-
-d = sp_data_final_clean
-coordinates(d) = ~longitude+latitude
-
-gd<-as.geodata(d)
-class(gd)
-```
+# Proceso de estimación de Variograma
 
 ## Estacionariedad de los datos
 
-Luego de haber analizado la autocorrelación de nuestros datos, tomamos el *dataset* resultante y pasamos a pensar si el proceso que generó los datos es estacionario o no. Con ayuda de un *plot* podemos rápidamente observar si hay tendencia tanto en x como en y, y la normalidad de nuestro proceso:
+Luego de haber analizado la autocorrelación de nuestros datos, tomamos el *dataset* 
+resultante y pasamos a pensar si el proceso que generó los datos es estacionario o no. 
+Con ayuda de un *plot* podemos rápidamente observar si hay tendencia tanto en x como en y,
+y la normalidad de nuestro proceso:
 
-```{r trend}
+```{r s3.data.definition, echo = F}
 d = sp_data_final_clean # guardamos el set de datos recortado en un objeto
 coordinates(d) = ~longitude+latitude
 
-gd<-as.geodata(d) # lo pasamos a un objetivo geodata para poder graficarlo
+gd <- as.geodata(d) # lo pasamos a un objetivo geodata para poder graficarlo
 
+```
+
+```{r, echo = F, fig.cap = 'Resumen de los datos', fig.align='center'}
 plot(gd, lowess=TRUE)
-
 ```
 
-Al respecto, podemos ver por un lado que los datos de temperatura geolocalizados en España son agrupados en 4 grupos distintos según R, de acuerdo a sus caracteristicas similares entre sí. Por otro lado, si miramos el *scatterplot* del eje y, se puede ver claramente la tendencia en la variable latitud, lo cual corrobora nuestras conclusiones en el análisis del apartado anterior. En cuanto al eje x (longitud) no vemos una tendencia distinguible a siemple vista. Finalmente, la distribución del proceso pareciera ser bimodal, lo cual podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).  
 
-### Varianza del cambio
+Al respecto, podemos ver por un lado que los datos de temperatura geolocalizados en España
+son agrupados en 4 grupos distintos según R, de acuerdo a sus caracteristicas similares 
+entre sí. Por otro lado, si miramos el *scatterplot* del eje y, se puede ver claramente la
+tendencia en la variable latitud, lo cual corrobora nuestras conclusiones en el análisis 
+del apartado anterior. En cuanto al eje x (longitud), no vemos una tendencia distinguible 
+a siemple vista. Finalmente, la distribución del proceso pareciera ser bimodal, lo cual 
+podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).  
 
-La primera aproximación que tomamos para estimar la varianza del cambio es realizar tanto el variograma nube como el mapa. Para comenzar, graficamos ambos **sin tendencia** para testear el supuesto de estacionariedad en media y varianza.
+## Varianza del cambio
 
-```{r variog nube}
+La primera aproximación que tomamos para estimar la varianza del cambio es realizar tanto
+el variograma nube como el variograma mapa. Para comenzar, graficamos ambos 
+**sin tendencia** para testear el supuesto de estacionariedad en media y varianza.
+
+```{r s3.variog.nube}
 v_nube_sintend <- variogram(temp~1, d, cloud=T)
-plot(v_nube_sintend, main = "Variograma Nube - sin tendencia") 
 
 ```
 
-Para realizar el variograma mapa tomamos valores de *cut off* y *width* que observamos medianamente con el variograma nube.
+```{r, echo=FALSE, fig.cap = "Variograma Nube - sin tendencia", fig.align='center'}
+plot(v_nube_sintend ) 
 
-```{r variog mapa}
+```
+
+
+Para realizar el variograma mapa tomamos valores de *cut off* y *width* que observamos 
+visualmente en el variograma nube.
+
+```{r s3.variog.mapa}
 v_map_sintend <- variogram(temp~1, d, cutoff=4, width = 1, map=T)
-plot(v_map_sintend, main = "Variograma Mapa - sin tendencia")
 
 ```
 
-Con ayuda de éstas visualizaciones comprobamos efectivamente que no estamos frente a un proceso isotrópico y que no es simétrico, ya que vemos que dependiendo de la dirección del vector de separación, la varianza del cambio se comporta de manera distinta.  
-Proseguimos a agregarle la tendencia que habíamos observado en y para ver si sustrayendo la tendencia y modelando con los residuos se soluciona el problema de la anisotropía. 
+```{r, echo=FALSE, fig.cap = "Variograma Mapa - sin tendencia", fig.align='center'}
+plot(v_map_sintend)
 
-```{r variog nube con tendencia}
-v_nube_tend_y <- variogram(temp~latitude, d, cloud=T, main = "Variograma Nube - tendencia en y")
+```
+
+Con ayuda de éstas visualizaciones comprobamos efectivamente que no estamos frente a un 
+proceso isotrópico y que no es simétrico, ya que vemos que dependiendo de la dirección del
+vector de separación, la varianza del cambio se comporta de manera distinta.  
+
+Proseguimos a agregarle la tendencia que habíamos observado en y para ver si sustrayendo 
+la tendencia y modelando con los residuos se soluciona el problema de la anisotropía. 
+
+```{r s3.variog.nube.tend, warning = FALSE}
+v_nube_tend_y <- variogram(temp~latitude, d, cloud=T)
+
+```
+
+```{r s3.variog.nube.tend.plot, echo=FALSE, fig.cap = "Variograma Nube - tendencia en Y", fig.align = 'center'}
 plot(v_nube_tend_y)
+```
+
+```{r s3.variog.map.tend, warning = FALSE}
+v_map_tend_y <- variogram(temp~latitude, d, cutoff = 4, width = 1, map=T)
 
 ```
-```{r variog mapa con tendencia}
-v_map_tend_y <- variogram(temp~latitude, d, cutoff = 4, width = 1, map=T, main = "Variograma Nube - tendencia en y")
+
+```{r, echo=FALSE, fig.cap = "Variograma Mapa - tendencia en Y"}
 plot(v_map_tend_y)
 
 ```
 
-Aún modelando la tendencia en y vemos en el variograma mapa que el proceso no se asimila a uno isotrópico. Nos preguntamos si se debía quizás a una tendencia en x que no estábamos observando, pero al modelar con ambas tendencias de forma lineal los resultados no varían significativamente.
+Aún modelando la tendencia en y, vemos en el variograma mapa que el proceso no se asimila a
+uno isotrópico. Nos preguntamos si se debía quizás a una tendencia en x que no estábamos 
+observando, pero al modelar con ambas tendencias de forma lineal los resultados no varían 
+significativamente.
 
-### Variograma empírico
+## Variograma empírico
 
-Para estimar la variabilidad del cambio espacial del proceso realizamos el variograma nube empírico, pero esta vez utilizando la función **variog**.
+Para estimar la variabilidad del cambio espacial del proceso realizamos el variograma nube
+empírico, pero esta vez utilizando la función **variog**.
 
-```{r, results='hide', message = FALSE}
-nube_clasica <- variog(gd, option = "cloud", main = "Variograma Nube Empírico")
+```{r s3.variog.emp, results='hide', message = FALSE}
+nube_clasica <- variog(gd, option = "cloud")
+
+```
+
+```{r, echo=FALSE, fig.cap = "Variograma Nube empírico" }
 plot(nube_clasica)
 
 ```
 
-A este punto vemos que tanto el variograma común como el geoestadístico conservan la misma forma funcional (aunque no la magnitud), lo cual es una buena señal.
 
-Con este variograma nube vemos que a partir de un **h=8** la varianza de los datos comienza a romperse, corroborando nuevamente nuestras conclusiones de la sección anterior. Esto nos indica que en las máximas distancias la varianza es la menor posible, lo cual tiene sentido ya que los puntos más alejados en el país de España son los que tienen mar alrededor, el cual conserva medianamente la misma temperatura. 
+A este punto vemos que tanto el variograma común como el geoestadístico conservan la misma
+forma funcional (aunque no la magnitud), lo cual es una buena señal.
 
-A continuación computamos el variograma empírico de puntos con tendencia lineal entre las coordenadas.
+Con este variograma nube vemos que a partir de un **h=8** la varianza de los datos 
+comienza a romperse, corroborando nuevamente nuestras conclusiones de la sección anterior.
+Esto nos indica que en las máximas distancias la varianza es la menor posible, lo cual
+tiene sentido ya que los puntos más alejados en el país de España son los que tienen mar
+alrededor, el cual conserva medianamente la misma temperatura. 
 
-```{r, results='hide', message = FALSE}
+A continuación computamos el variograma empírico de puntos con tendencia lineal entre las
+coordenadas.
+
+```{r s3.variog.emp2, results='hide', message = FALSE}
 vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7,l = 25))
 s1 = variog.mc.env(gd, obj = vg_trend)
+
+```
+
+```{r, echo=FALSE, fig.cap = 'Variograma Empírico - Tendencia lineal'}
 plot(vg_trend, env = s1)
 
 ```
 
-Por otro lado, con la ayuda de un variograma con 4 direcciones distintas, podemos observar cómo el mismo cambia según la dirección que se elija.
 
-```{r, results='hide', message = FALSE}
-vario.4 <- variog4(gd, max.dist = 7)
-plot(vario.4, lwd = 2)
+Por último, con la ayuda de un variograma con 4 direcciones distintas podemos observar
+cómo el mismo cambia según la dirección que se elija.
+
+```{r s3.variog.dir, results='hide', message = FALSE}
+vario.dir <- variog4(gd, max.dist = 7)
 
 ```
 
-En función de todo lo analizado y observado gráficamente, decidimos proseguir ajustando el variograma teórico al modelo con tendencia lineal en las coordenadas. 
+```{r, echo=FALSE, fig.cap = 'Variograma según dirección'}
+plot(vario.dir, lwd = 2)
 
-### Variograma teórico
+```
 
-Para elegir el modelo teórico que mejor ajuste a nuestros datos utilizamos la función *fit.variogram*. En primer lugar, cabe aclarar que como ésta función admite como *input* variogramas construídos con la función *variogram*, nuestro variograma empírico a ajustar es el siguiente:
+En función de todo lo analizado y observado gráficamente, decidimos proseguir ajustando el
+variograma teórico al modelo con tendencia lineal en las coordenadas. 
 
-```{r}
+## Variograma teórico
+
+Para elegir el modelo teórico que mejor ajuste a nuestros datos utilizamos la función 
+*fit.variogram*. Cabe aclarar que como ésta función admite como *input* solo
+variogramas construídos con la función *variogram*, nuestro variograma empírico a ajustar
+es el siguiente:
+
+```{r s3.variog.wtend}
 v_tend <- variogram(temp~latitude+longitude, d)
+
+```
+
+```{r, echo=FALSE, fig.cap ='Variograma Teórico'}
 plot(v_tend)
 ```
 
-Por otro lado, con ayuda de dicha función exploramos varias distribuciones teóricas y obtuvimos, para cada una, los valores óptimos de los parámetros. Finalmente, para poder elegir observamos visualmente el variograma en conjunto con las distintas distribuciones teóricas y calculamos la suma de cuadrado del error para cada opción. Los resultados se resumen en la siguiente tabla: 
+Con ayuda de dicha función exploramos varias distribuciones teóricas y 
+obtuvimos, para cada una, los valores óptimos de los parámetros. Para poder
+elegir con cual quedarnos, observamos visualmente el variograma en conjunto con las distintas distribuciones
+teóricas y calculamos la suma de cuadrado del error para cada opción. Los resultados se
+resumen en la siguiente tabla: 
 
 | Modelo         | Sill  | Range | Nugget | Kappa | SSErr |
 | :---:          | :---: | :---: | :---:  | :---: | :---: |
@@ -124,25 +175,77 @@ Por otro lado, con ayuda de dicha función exploramos varias distribuciones teó
 | Mattern        | 2.05  | 0.28  | 0      | 1.8   |14.03  |
 | Pentaspherical | 2.03  | 1.86  | 0      | -     |20.84  |
 
-El modelo teórico que mejor se ajuste a nuestro modelo empírico será aquel que tenga menor error SSErr. En este caso, podemos elegir entre el *Mattern*, *Bessel* o el *Pentaspherical*. 
+El modelo teórico que mejor se ajuste a nuestro modelo empírico será aquel que tenga menor
+error SSErr. En este caso, podemos elegir entre el *Mattern*, *Bessel* o el
+*Pentaspherical*. 
 
-```{r}
+```{r s3.variog.fitting}
 vt_mat = fit.variogram(v_tend, vgm(2.05, "Mat", 0.28, 0, kappa = 1.8), fit.kappa = T)
 vt_bes = fit.variogram(v_tend, vgm(2.1, "Bes", 0.42, 0))
 vt_pen = fit.variogram(v_tend, vgm(2.03, "Pen", 1.86, 0))
 
 ```
 
+```{r, figures-side, fig.show="hold", out.width="100%", echo=FALSE, fig.cap = 'Distintos Variogramas analizados'}
+vt_mat_2 = variogramLine(vt_mat, maxdist = max(v_tend$dist))
+vt_bes_2 = variogramLine(vt_bes, maxdist = max(v_tend$dist))
+vt_pen_2 = variogramLine(vt_pen, maxdist = max(v_tend$dist))
 
-```{r, figures-side, fig.show="hold", out.width="32%"}
-par(mfrow = c(3,1))
-plot(v_tend, vt_mat, main ='Mattern')
-plot(v_tend, vt_bes, main = 'Bessel')
-plot(v_tend, vt_pen, main = 'Pentaspherical')
+vg.mat.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'black') +
+    geom_line(data = vt_mat_2,
+              colour = 'blue',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza',
+          title = 'Mattern') +
+    theme(plot.title = element_text(hjust = 0.5))
+
+vg.bes.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'black') +
+    geom_line(data = vt_bes_2,
+              colour = 'yellow',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza',
+          title = 'Bessel') +
+    theme(plot.title = element_text(hjust = 0.5))
+
+vg.pen.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
+    geom_point(shape = 6,
+               size = 2,
+               colour = 'black') +
+    geom_line(data = vt_pen_2,
+              colour = 'green',
+              size = 1) +
+    ylim(0,3) +
+    labs( x = 'Distance',
+          y = 'Semivarianza',
+          title = 'Pentaspherical') +
+    theme(plot.title = element_text(hjust = 0.5))
+
+vg.mat.plot
+vg.bes.plot
+vg.pen.plot
 
 ```
 
-Elegimos quedarnos con el modelo teórico Mattern para ajustar nuestro variograma empírico y procedemos utilizarlo para realizar las predicciones.
+
+Elegimos quedarnos con el modelo teórico *Mattern* y el *Esférico* para ajustar nuestro 
+variograma empírico. Ambos son los modelos que menos error presentan, luego de haber 
+descartado *Bessel* y *Pentaspherical* ya que teóricamente no suelen ser utilizados en 
+este tipo de problemas. A su vez, nos quedamos con dos distribuciones para comparar sus 
+*performances* en la tarea de predicción.  
 
 
+```{r output.fits, echo = F, message = F}
+vg.fit = fit.variogram(v_tend, vgm(2.01, "Sph", 1.50, 0))
 
+vg.best.fit = vt_mat
+```

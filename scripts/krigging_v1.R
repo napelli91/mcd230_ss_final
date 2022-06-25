@@ -2,6 +2,7 @@ if(!require(pacman)) install.packages("pacman")
 pacman::p_load(
     'gstat',
     'ggplot2',
+    'reshape2',
     'ggpubr',
     'geoR',
     'spdep',
@@ -19,6 +20,7 @@ library(spdep)
 library(sp)
 library(dplyr)
 library(ggplot2)
+library(reshape2)
 library(ggpubr)
 library(viridis)
 
@@ -189,15 +191,15 @@ spplot(krig.alt.fit["var1.var"],
 krig.fit %>% as.data.frame %>%
     ggplot(aes(x = longitude, y = latitude)) +
     geom_tile(aes(fill = var1.pred)) + coord_equal() +
-    scale_fill_gradient(low = "yellow", high="red") +
+    scale_fill_viridis(option = 'magma') +
+    # scale_fill_gradient(low = "yellow", high="red") +
     #scale_x_continuous(labels = comma) + scale_y_continuous(labels = comma) +
     theme_bw()
 
 krig.alt.fit %>% as.data.frame %>%
     ggplot(aes(x = longitude, y = latitude)) +
     geom_tile(aes(fill = var1.pred)) + coord_equal() +
-    scale_fill_gradient(low = "yellow", high="red") +
-    #scale_x_continuous(labels = comma) + scale_y_continuous(labels = comma) +
+    scale_fill_viridis(option = 'magma') +
     theme_bw()
 
 
@@ -216,6 +218,24 @@ krig.val.data.alt <- krige(temp ~ longitude + latitude,
                        locations = sp_data_final_clean,
                        newdata = validation.coords,
                        model = vg.best.fit)
+
+
+val.data <- as.data.frame(cbind(validation.data$temp,
+                                krig.val.data$var1.pred,
+                                krig.val.data.alt$var1.pred))
+names(val.data) <- c("original", "Exponential", "Matern")
+
+fig.comp.val.1 <- val.data %>% melt(id.vars = "original") %>% ggplot() +
+    geom_point(aes(x = original,
+                   y = value,
+                   colour = as.factor(variable))) +
+    scale_fill_discrete(name = "Model",
+                        labels = c("Exponential", "Matern")) +
+    labs(x = 'Original value',
+         y = 'Predicted value',
+         colour = "Model")
+
+fig.comp.val.1
 
 
 kriging_error = sqrt(mean((validation.data$temp - krig.val.data$var1.pred)^2))
@@ -237,15 +257,15 @@ plot(k_vector, k_error_vector, type="l")
 
 ## a partir de los modelos obtenidos vamos a crossvalidar las regresiones creadas
 
-tend = formula(temp ~ longitude + latitude)
+trend = formula(temp ~ longitude + latitude)
 
-valcruz1 <- krige.cv(formula = tend,
+valcruz1 <- krige.cv(formula = trend,
                      locations = sp_data_final_clean,
                      model = vg.fit,
                      nfold = 153,
                      verbose = T,
                      debug.level = 10)
-valcruz2 <- krige.cv(formula = tend,
+valcruz2 <- krige.cv(formula = trend,
                      locations = sp_data_final_clean,
                      model = vg.best.fit,
                      nfold = 153,
@@ -356,14 +376,14 @@ dens.plot.1 <- ggplot(polys_sf) +
     scale_fill_viridis(option = "magma", direction = -1)
     # + my_theme
 
-polys = as(krig.best.fit,"SpatialPolygonsDataFrame")
+polys = as(krig.alt.fit,"SpatialPolygonsDataFrame")
 polys_sf = as(polys, "sf")
 points_sf = as(krig.fit, "sf")
 dens.plot.2 <- ggplot(polys_sf) +
     geom_sf(aes(fill = var1.pred)) +
     ggtitle("Valores predichos [Mat]") +
     coord_sf(datum=st_crs(4326)) +
-    scale_fill_viridis(option = "magma", direction = -1)
+    scale_fill_viridis(option = "magma", direction = 1)
     # + my_theme
 
 dens.plot.1
