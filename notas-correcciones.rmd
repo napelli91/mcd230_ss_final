@@ -1,0 +1,100 @@
+---
+title: "Correcciones"
+author: "Martin"
+date: "26/6/2022"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Notas sobre las correciones del informe
+
+1- "Inicialmente estos datos se tomó el dataset de los papers citados previamente, el mismo conssite en un
+archivo GDX que tiene contiene por linea 9100 puntos de temperatura correspondientes a una grilla de 0.5 x
+0.5 con la siguiente configuración:"
+
+"Los datos provienen de un archivo con formato GDX, el mismo contiene por línea 9100 puntos de temperatura
+correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:"
+
+2- "Cada linea en el archivo GDX original representa una estación del año y el correspondiente año, donde vamos a encontrar el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70) etc, llenandose por longitudes desde la latitud más alta hasta la más baja."
+
+"Es decir, dado que los datos son del continente europeo se recortaron las coordenadas correspondientes al territorio continental de España. Además, el dataset divide los datos en las cuatro estaciones del año, nosotros nos quedamos con la primavera."
+
+3- "Una vez disponibilizado el archivo csv para la primavera de 1989, filtramos incialmente los valores NaN, dado que por construcción el dataset original tiene los cuerpos de agua con una referencia de NaN o -999.99, ya que éste valor no tiene información alguna a nuestro análisis los retiramos."
+
+"El archivo csv se filtra inicialmente de los valores _NaN_, dado que por construcción el dataset original tiene los cuerpos de agua con una referencia de _NaN_ o -999.99. Ese valor no tiene información alguna para nuestro análisis, entonces los retiramos. Luego de ello vamos a filtrar el área correspondiente para la segmentación del territorio Español."
+
+4- "En un problema de estadística espacial nos interesa estudiar la varianza-covarianza de la varible en estudio
+en el espacio. Es decir, determinar si la variable regionalizada tiene un comportamiento que se pueda modelar
+en función a su ubicación en el espacio. Para este motivo, vamos a medir la autocorrelación espacial
+mediante el Índice de Moran y el Estadístico C de Geary que miden la autocorrelación lineal de los datos."
+
+"En un problema de estadística espacial nos interesa estudiar la varianza-covarianza de la
+variable en estudio en el espacio y su matriz de autocorrelación. Es decir, determinar si la variable regionalizada tiene
+un comportamiento que se pueda modelar en función a su ubicación en el espacio. Por este
+motivo, vamos a medir la autocorrelación espacial mediante el *Índice de Moran* y el
+*Estadístico C de Geary* que miden la autocorrelación lineal de los datos."  
+
+5- "Finalmente, la distribución del proceso pareciera ser bimodal, lo cual podemos
+atribuirlo a la forma en que se recolectaron los datos (en forma de grilla)."
+
+"Con la transformación de Box-Cox se aproxima a una normal."
+
+6- "Para comenzar, graficamos ambos 
+**sin tendencia** para testear el supuesto de estacionariedad en media y varianza."
+
+BORRADO
+
+7- "A este punto vemos que tanto el variograma común como el geoestadístico conservan la misma
+forma funcional (aunque no la magnitud), lo cual es una buena señal.
+
+Con este variograma nube vemos que a partir de un **h=8** la varianza de los datos 
+comienza a romperse, corroborando nuevamente nuestras conclusiones de la sección anterior."
+
+"En este punto, vemos que los variogramas ejecutados con ambos paquetes *variog (geoR)* y *variogram (gstat)* tienen una forma funcional similar (aunque no la magnitud), lo cual es una buena señal.
+
+Con este variograma nube vemos que a partir de un **h=8** se comienza a ver la meseta, corroborando nuevamente nuestras conclusiones de la sección anterior."
+
+8- "Elegimos quedarnos con el modelo teórico *Mattern* y el *Esférico* para ajustar nuestro 
+variograma empírico. Ambos son los modelos que menos error presentan, luego de haber 
+descartado *Bessel* y *Pentaspherical* ya que teóricamente no suelen ser utilizados en 
+este tipo de problemas"
+
+"Elegimos quedarnos con el modelo teórico *Mattern* y el *Esférico* para ajustar nuestro 
+variograma empírico. Ambos son los modelos que menos error presentan, descartamos *Bessel* y *Pentaspherical*. A su vez, nos quedamos con dos distribuciones para comparar sus 
+*performances* en la tarea de predicción."
+
+9-"Para nuestro dataset, debido a que observamos una dependencia clara entre nuestra variable de interés
+(Temperatura promedio en superficie) y la métrica espacial, no podemos dar por sentado que exista un
+modelo donde exista una media desconocida \mu_0 tal que nuestro sistema se pueda describir como
+Z(s)=\mu+\epsilon(s)."
+
+
+"Para nuestro dataset, se observa una dependencia clara entre nuestra variable
+de interés (Temperatura promedio en superficie) y las coordenadas de latitud y longitud, en dónde nos encontramos en un proceso con tendencia que no es estacionario."
+
+10- "Anteriormente utilizamos krigging para poder interpolar los valores restantes en nuestra grilla, a partir de ello se genera un heatmap de las predicciones donde podemos ver el comportamiento de la variable de interés sobre nuestros nuevos puntos, por construcción estaremos viendo puntos intermedios entre nuestro puntos iniciales que quizás no teníamos suficiente información para asumir su valor.
+
+Por esto, proponemos evaluar primeramente el resultado obtenido si se hubiese utilizado a KNN como método
+de interpolación de los datos. Veremos como se comporta el RMSE de este método en función de la cantidad
+de vecinos a considerar en la interpolación."
+
+"Anteriormente utilizamos krigging para poder interpolar los valores restantes en nuestra 
+grilla, a partir de ello se genera un mapa de calor de las predicciones donde podemos ver el 
+comportamiento de la variable de interés sobre nuestros nuevos puntos, por construcción
+estaremos viendo puntos intermedios entre nuestro puntos iniciales que quizás no teníamos
+suficiente información para asumir su valor. 
+
+Por esto, proponemos evaluar primeramente el resultado obtenido si se hubiese utilizado
+a KNN como método de interpolación de los datos, a modo de tener una validación cruzada o modelo base con quién competir. Veremos como se comporta el RMSE de este
+método en función de la cantidad de vecinos a considerar en la interpolación."
+
+
+
+
+
+
