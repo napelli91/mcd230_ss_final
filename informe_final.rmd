@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ***Inicialización de librerias***
 
 ```{r require.libs, include=FALSE}
-if(!require(pacman)) install.packages("pacman")
+if ( !require(pacman) ) install.packages("pacman")
 pacman::p_load(
     'automap',
     'dplyr',
