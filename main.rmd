@@ -19,7 +19,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 ```
 
 ***Inicialización de librerias***
@@ -64,7 +63,6 @@ library(rgdal)
 library(sp)
 library(spdep)
 
-
 ## Librerias auxiliares
 library(automap)
 library(FNN)
@@ -77,11 +75,12 @@ library(viridis)
 
 ```{r, child='content/seccion_1.Rmd'}
 ```
-
 \newpage
 ```{r, child='content/seccion_2.Rmd'}
 ```
-
+\newpage
+```{r, child='content/seccion_3_variogramas.Rmd'}
+```
 \newpage
 ```{r, child='content/seccion_3_variogramas.Rmd'}
 ```
@@ -120,8 +119,12 @@ buscar el punto de acceso ideal para penetrar nuevos pozos.
 ```{r, echo = F, fig.align='center', fig.cap='Mapa de contorno de datos interpolados por kriging de potenciales de pozos petroleros. Los pozos actuales se marcan con un circulo', out.width='140%'}
 knitr::include_graphics('./content/figs/5_1_krig_ex.png')
 ```
+<<<<<<< HEAD
+\newpage
+=======
 
 > ¿Cómo se selecciona (elige) el semivariograma teórico? ¿A partir de qué elementos y cómo se evalúa su elección?
+>>>>>>> da2d457a6db8d0eb0b188088f31af34e51825119
 
 Sabiendo que necesitamos que el variograma sea una función condicionalmente definida no 
 negativa y que necesitamos
