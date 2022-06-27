@@ -94,7 +94,7 @@ tierra tienen datos de temperatura, mientras lo que están en el oceano son tipo
 ## Preprocesamiento de los datos
 
 Inicialmente estos datos se tomó el dataset de los papers citados previamente, el mismo 
-conssite en un archivo GDX que tiene contiene por linea 9100 puntos de temperatura
+consiste en un archivo GDX que tiene contiene por linea 9100 puntos de temperatura
 correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
 
 >File: TT_Europe_Seasons_1500_2002.New.GDX
