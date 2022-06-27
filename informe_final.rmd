@@ -40,7 +40,7 @@ pacman::p_load(
     'udunit2'
 )
 
-load(file = "./data/spain_geodata_temperature_1989_spring.RData")
+load(file = "./data/spain_geodata_boxcox.RData")
 
 ```
 
@@ -170,7 +170,7 @@ los resultados.
 ```{r s2.overall, include=FALSE}
 
 #Tanto para Moran cómo para Geary
-sp_geo_data <- as.geodata(cbind(sp_data_final$longitude,sp_data_final$latitude,sp_data_final$temp))
+sp_geo_data <- as.geodata(cbind(sp_data_final$longitude,sp_data_final$latitude,sp_data_final$temp_sqrt))
 pixel <- coordinates(sp_geo_data[1])
 grilla <- dnearneigh(pixel,0,3)
 plot(grilla ,pixel)
@@ -250,7 +250,8 @@ de distancia entre vecinos corrimos los test distintas cantidades de vecinos. Es
 secuencia que va desde 1.5° de distancia máxima hasta 8°, y se puede ver que tanto Moran
 cómo Geary se vuelven más significativos hasta una distancia máxima de 3° para descender
 con una pendiente cada vez menos pronunciada hasta los 8° de distancia máxima. Por eso
-entendemos que los estadísticos parecerían tener cierta estabilidad en el rango que va de 2° a 4° de distancia máxima. 
+entendemos que los estadísticos parecerían tener cierta estabilidad en el rango que va de 
+2° a 4° de distancia máxima. 
 
 ```{r, echo=FALSE, fig.cap = 'Estadísticos de Moran y Geary según distancia de vecinos', fig.align='center'}
 g1
@@ -264,7 +265,9 @@ corresponden puntos de alta temperatura a su alrededor, y lo mismo se espera con
 baja temperatura o temperatura media. Con el procedimiento de Moran Local procederemos a 
 ver cuáles son los puntos atípicos cuya disimilaridad es sigficativa. 
 
-$$IML_{Si} = \frac{z(Si)- \bar{z}}{S^2} \sum_{j=1 j \neq i}^{n}w_{ij}(z(s_j)- \bar{z})$$
+$$
+IML_{Si} = \frac{z(Si)- \bar{z}}{S^2} \sum_{j=1 j \neq i}^{n}w_{ij}(z(s_j)- \bar{z})
+$$
 
 ```{r, echo=TRUE, fig.cap = 'Gráfico de dispersión de Moran para nuestros datos', fig.align='center'}
 M <- moran.plot(sp_geo_data$data,
@@ -305,7 +308,7 @@ utilizado en el análisis posterior.
 sp_data_final_clean <- sp_data_final[-c(neg_IML), ]
 sp_geo_data_clean <- as.geodata(cbind(sp_data_final_clean$longitude,
                                       sp_data_final_clean$latitude,
-                                      sp_data_final_clean$temp))
+                                      sp_data_final_clean$temp_sqrt))
 ```
 
 
