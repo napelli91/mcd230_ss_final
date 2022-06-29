@@ -325,7 +325,7 @@ ggarrange(p1,
 
 ```
 
-si bien no es posible normalizar en su totalidad de los datos, consideramos que con esta
+Si bien no es posible normalizar en su totalidad de los datos, consideramos que con esta
 transformación podremos continuar con el análisis del efecto geoestadísitco en nuestro
 dataset.
 
@@ -474,10 +474,8 @@ plot(gd, lowess=TRUE)
 Al respecto, podemos ver por un lado que los datos de temperatura geolocalizados en España
 son agrupados en 4 grupos distintos según R, de acuerdo a sus caracteristicas similares 
 entre sí. Por otro lado, si miramos el los gráficos de dispersión del eje y, se puede ver claramente la
-tendencia en la variable latitud, lo cual corrobora nuestras conclusiones en el análisis 
-del apartado anterior. En cuanto al eje x (longitud), no vemos una tendencia distinguible 
-a siemple vista. Finalmente, la distribución del proceso pareciera ser bimodal, lo cual 
-podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).
+tendencia en la variable latitud. En cuanto al eje x (longitud), no vemos una tendencia distinguible 
+a siemple vista. Finalmente, vemos la distribución del proceso transformado pareciera asemejarse a una normal.
 
 ## Varianza del cambio
 
@@ -557,22 +555,22 @@ plot(nube_clasica)
 
 En este punto, vemos que los variogramas ejecutados con ambos paquetes *variog (geoR)* y *variogram (gstat)* tienen una forma funcional similar (aunque no la magnitud), lo cual es una buena señal.
 
-Con este variograma nube vemos que a partir de un **h=8** se comienza a ver la meseta, corroborando nuevamente nuestras conclusiones de la sección anterior.
+Con este variograma nube vemos que a partir de un **h=8** se comienza a ver la meseta, corroborando nuestras conclusiones de la sección anterior.
 Esto nos indica que en las máximas distancias la varianza es la menor posible, lo cual
 tiene sentido ya que los puntos más alejados en el país de España son los que tienen mar
 alrededor, el cual conserva medianamente la misma temperatura. 
 
-A continuación computamos el variograma empírico de puntos con tendencia lineal entre las
-coordenadas.
+#A continuación computamos el variograma empírico de puntos con #tendencia lineal entre las
+#coordenadas.
 
 ```{r s3.variog.emp2, results='hide', message = FALSE}
-vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7,l = 25))
-s1 = variog.mc.env(gd, obj = vg_trend)
+#vg_trend <- variog(gd, trend = "1st", uvec = seq(0,7,l = 25))
+#s1 = variog.mc.env(gd, obj = vg_trend)
 
 ```
 
 ```{r, echo=FALSE, fig.cap = 'Variograma Empírico - Tendencia lineal'}
-plot(vg_trend, env = s1)
+#plot(vg_trend, env = s1)
 
 ```
 
