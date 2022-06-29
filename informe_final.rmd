@@ -118,24 +118,28 @@ knitr::include_graphics('./content/figs/1_1_europe_temp_data.png')
 ```
 
 Para eliminar la componente temporal de nuestro dataset, decidimos fijar el año 1989 y 
-analizar el comportamiento de la temperatura promedio en tierra durante la primavera. Esto
-quiere decir que tomamos una fila del dataset inicial en formato GDX. 
+analizar el comportamiento de la temperatura promedio en tierra durante la primavera. Para
+esto, debemos entender la estructura del archivo GDX que contiene los datos. 
 
-Para poder realizar este filtrado, primero debemos entender la naturaleza de los
-datos, el formato de los datos obtenidos es de una grilla que se obtuvo de aplicar una 
-proyección Equirectangular sobre el área cubierta mencionada anteriormente. Cada linea
-en el archivo GDX original representa una estación del año y el correspondiente año donde,
-por ejemplo, el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70), y
-así sucesivamente, llenándose por longitudes desde la latitud más alta hasta la más baja.  
+> Estructura del archivo GDX
+```
+Year1Season1  Gridpoint1 Gridpoint2 Gridpoint3 Gridpoint4 .....Gridpointy
+Year1Season2 Gridpoint1 Gridpoint2 Gridpoint3 Gridpoint4 .....Gridpointy
+Year1Season3 Gridpoint1 Gridpoint2 Gridpoint3 Gridpoint4 .....Gridpointy
+Year1Season4 Gridpoint1 Gridpoint2 Gridpoint3 Gridpoint4 .....Gridpointy
+Year2Season1  Gridpoint1 Gridpoint2 Gridpoint3 Gridpoint4 .....Gridpointy
+```
 
-Sabiendo la densidad de la grilla podemos convertir el vector de 9100 puntos en
-una matriz (grilla) de 70x130. Estos datos primeramente segmentados los vamos a convertir
-en un archivo *csv* que luego podamos ingresar en R para su posterior procesamiento.
+Cada fila en el dataset tiene 9100 puntos representando una grilla de 70x130 llenandose
+de izquierda a derecha y de arriba hacia abajo. Esto quiere decir, el primer punto 
+corresponde a las coordenadas (-25,70), luego (-24.5,70), y así sucesivamente.
 
-Una vez obtenido nuestros datos para el año y la estación deseada, filtramos algunos
-valores: datos con valor -999,99, que no aportan a nuestro análisis; y datos _NaN_ que,
-omo mencionamos previamente, son datos correspondientes a superficies acuáticas. Luego de
-ello tomamos el área correspondiente al territorio Español. 
+Estos datos primeramente segmentados los vamos a convertir en un archivo *csv* que luego
+podamos ingresar en R para su posterior procesamiento.
+
+A partir de este archivo csv, filtramos algunos
+valores: datos con valor -999,99 y _NaN's_. Luego de ello tomamos el área correspondiente
+al territorio Español. 
 
 > Spain Boundary box
 > 
@@ -329,7 +333,7 @@ dataset.
 
 En un problema de estadística espacial nos interesa estudiar la varianza-covarianza de la
 varible en estudio en el espacio. Es decir, determinar si la variable regionalizada tiene
-un comportamiento que se pueda modelar en función a su ubicación en el espacio. Para este
+un comportamiento que se pueda modelar en función a su ubicación en el espacio. Por este
 motivo, vamos a medir la autocorrelación espacial mediante el *Índice de Moran* y el
 *Estadístico C de Geary* que miden la autocorrelación lineal de los datos.  
 
@@ -469,11 +473,11 @@ plot(gd, lowess=TRUE)
 
 Al respecto, podemos ver por un lado que los datos de temperatura geolocalizados en España
 son agrupados en 4 grupos distintos según R, de acuerdo a sus caracteristicas similares 
-entre sí. Por otro lado, si miramos el *scatterplot* del eje y, se puede ver claramente la
+entre sí. Por otro lado, si miramos el los gráficos de dispersión del eje y, se puede ver claramente la
 tendencia en la variable latitud, lo cual corrobora nuestras conclusiones en el análisis 
 del apartado anterior. En cuanto al eje x (longitud), no vemos una tendencia distinguible 
 a siemple vista. Finalmente, la distribución del proceso pareciera ser bimodal, lo cual 
-podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).  
+podemos atribuirlo a la forma en que se recolectaron los datos (en forma de grilla).
 
 ## Varianza del cambio
 
