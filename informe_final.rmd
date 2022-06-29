@@ -7,14 +7,16 @@ output:
         code_folding: show
         df_print: paged
         toc: true
+        theme: journal
+        highlight: tango
         number_sections: true
-        fig_width: 9.6
+        fig_width: 12
         fig_height: 8
         fig_caption: true
         fig_align: 'center'
-        toc_float:
-          collapsed: True
-          smooth_scroll: false
+        #toc_float:
+        #  collapsed: True
+        #  smooth_scroll: false
 ---
 
 ```{r setup, include=FALSE}
@@ -69,6 +71,8 @@ library(spdep)
 library(automap)
 library(FNN)
 library(lattice)
+library(MASS)
+library(latex2exp)
 library(udunits2)
 library(viridis)
 
@@ -94,9 +98,9 @@ tierra tienen datos de temperatura, mientras que los que están en el océano so
 
 ## Preprocesamiento de los datos
 
-Inicialmente estos datos fueron tomados del *dataset* de los *papers* citados previamente, el mismo 
+El *dataset* propuesto en los *papers* citados previamente 
 consiste en un archivo GDX que tiene contiene por linea 9100 puntos de temperatura
-correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
+correspondientes a una grilla de 0.5° x 0.5° con la siguiente configuración:
 
 >File: TT_Europe_Seasons_1500_2002.New.GDX
 >
@@ -113,18 +117,25 @@ correspondientes a una grilla de 0.5 x 0.5 con la siguiente configuración:
 knitr::include_graphics('./content/figs/1_1_europe_temp_data.png')
 ```
 
-Como se mencionó previamente, se decidió tomar la primavera de 1989 para poder eliminar la
-componente temporal de nuestro proceso estocástico y centrarnos solo en el análisis 
-espacial. Para poder realizar este filtrado, primero debemos entender la naturaleza de los
+Para eliminar la componente temporal de nuestro dataset, decidimos fijar el año 1989 y 
+analizar el comportamiento de la temperatura promedio en tierra durante la primavera. Esto
+quiere decir que tomamos una fila del dataset inicial en formato GDX. 
+
+Para poder realizar este filtrado, primero debemos entender la naturaleza de los
 datos, el formato de los datos obtenidos es de una grilla que se obtuvo de aplicar una 
 proyección Equirectangular sobre el área cubierta mencionada anteriormente. Cada linea
-en el archivo GDX original representa una estación del año y el correspondiente año donde, por ejemplo, el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70), y así sucesivamente, llenándose por longitudes desde la latitud más alta hasta la más baja.  
+en el archivo GDX original representa una estación del año y el correspondiente año donde,
+por ejemplo, el primer punto corresponde a las coordenadas (-25,70), luego (-24.5,70), y
+así sucesivamente, llenándose por longitudes desde la latitud más alta hasta la más baja.  
 
 Sabiendo la densidad de la grilla podemos convertir el vector de 9100 puntos en
 una matriz (grilla) de 70x130. Estos datos primeramente segmentados los vamos a convertir
 en un archivo *csv* que luego podamos ingresar en R para su posterior procesamiento.
 
-Una vez que tenemos los datos para nuestra estación y año elegidos, filtramos algunos valores: datos con valor -999,99, que no aportan a nuestro análisis; y datos _NaN_ que, como mencionamos previamente, son datos correspondientes a superficies acuáticas. Luego de ello tomamos el área correspondiente al territorio Español. 
+Una vez obtenido nuestros datos para el año y la estación deseada, filtramos algunos
+valores: datos con valor -999,99, que no aportan a nuestro análisis; y datos _NaN_ que,
+omo mencionamos previamente, son datos correspondientes a superficies acuáticas. Luego de
+ello tomamos el área correspondiente al territorio Español. 
 
 > Spain Boundary box
 > 
@@ -134,7 +145,8 @@ Una vez que tenemos los datos para nuestra estación y año elegidos, filtramos 
 
 Dado que esta grilla contiene puntos referentes a otros países, se realizó un proceso de 
 limpieza más exhaustivo de manera que los puntos del *dataset* estén contenidos dentro del 
-contorno del país elegido. Para esto utilizamos un _shp_ de España e iterativamente removimos los puntos externos al pais.
+contorno del país elegido. Para esto utilizamos un _shp_ de España e iterativamente 
+removimos los puntos externos al pais.
 
 ```{r, echo = F, fig.align='center', fig.cap='Representación de los datos en el dataset', out.width='140%'}
 knitr::include_graphics('./content/figs/1_2_arial_data.png')
@@ -149,7 +161,10 @@ nuestras regresiones.
 knitr::include_graphics('./content/figs/1_3_data_splitting.png')
 ```
 
-Para poder reproducir nuestro análisis, tomamos un valor de semilla igual a 42 en la segmentación de datos aleatoria. El resultado es un *dataset* de *training* que cuenta con el 70% del contenido del *dataset* inicial, lo cual equivale a un total de 163 puntos. Por el otro lado, el *dataset* de *test* tiene 70 puntos.
+Para poder reproducir nuestro análisis, tomamos un valor de semilla igual a 42 en la
+segmentación de datos aleatoria. El resultado es un *dataset* de *training* que cuenta con
+el 70% del contenido del *dataset* inicial, lo cual equivale a un total de 163 puntos. Por
+el otro lado, el *dataset* de *test* tiene 70 puntos.
 
 Finalmente, guardamos los datos en formato _Data.Frame_ y  _GeoData.Data.Frame_, para
 poder analizarlos posteriormente.
@@ -201,6 +216,115 @@ grilla2 <- dnearneigh(pixel,0,6)
 
 # Analísis iniciales
 
+## Análisis de normalidad
+
+Como primera medida, vamos a analizar la normalidad de nuestros datos. Si realizamos un
+histograma de los datos, podemos observar rápidamente que podemos observar una bimodalidad
+en los mismos.
+
+```{r, echo=FALSE, fig.cap = 'Histograma y diagrama q-q para los datos', fig.align='center'}
+p1 = sp_data_final %>% dplyr::select(temp) %>% 
+    ggplot(aes(x = temp)) + 
+    geom_histogram(aes(y=..density..), bins = 12, fill = '#00C5CD', colour = '#00C5CD') +
+    geom_density(lwd = 1, colour = '#E67F3E', fill = '#E67F3E', alpha = 0.25) +
+    labs(x = 'Temperatura',
+         y = 'Densidad')
+p2 = sp_data_final %>% dplyr::select(temp) %>% 
+    ggplot(aes(sample = temp)) +
+    stat_qq(colour = '#00C5CD') +
+    stat_qq_line(lwd = 1, colour = '#E67F3E') +
+    labs(x = 'Teórico',
+         y = 'Muestra')
+
+ggarrange(p1,
+          p2,
+          ncol = 2,
+          nrow = 1)
+
+```
+
+Para corregir la misma, proponemos transformar la variable utilizando el método de *Box-Cox*.
+Realizando el ajuste como se detalla abajo, obtenemos que el intervalo de confianza
+contiene tanto $\lambda = 0.5$ como a $\lambda = 2$.
+
+```{r, fig.cap = 'Optimización de lambda obtenida para transformación.',fig.align='center'}
+
+## Definimos una lista de lambdas a buscar entre -0.5 y 2.5
+lambdas_vector = seq(-0.5,2.5,0.01)
+
+bcfit = boxcox(lm(sp_data_final$temp ~ 1),
+               lambda = lambdas_vector,
+               plotit = T)
+
+```
+Con este ajuste obtenemos que el $\bar{\lambda}=$ `r bcfit$x[which.max(bcfit$y)]`. Analizamos
+entre los valores (0.5, 1.23, 2) si existe una diferencia significativa en el diagrama
+de cuantiles para validar si tenemos mejora en nuestra distribución.
+
+```{r, echo=FALSE, fig.cap = 'Diagrama q-q para las distintas transformaciones', fig.align='center'}
+p1 = sp_data_final %>% dplyr::select(temp_sqrt) %>% 
+    ggplot(aes(sample = temp_sqrt - mean(temp_sqrt))) +
+    stat_qq(colour = '#00C5CD') +
+    stat_qq_line(lwd = 1, colour = '#E67F3E') +
+    labs(title =TeX(r'($\lambda = 0.5$)'),
+         x = 'Teórico',
+         y = 'Muestra')
+p2 = sp_data_final %>% dplyr::select(temp_opti) %>% 
+    ggplot(aes(sample = temp_opti - mean(temp_opti))) +
+    stat_qq(colour = '#00C5CD') +
+    stat_qq_line(lwd = 1, colour = '#E67F3E') +
+    labs(title =TeX(sprintf(r'($\lambda = %.2f$)', bcfit$x[which.max(bcfit$y)])),
+         x = 'Teórico',
+         y = 'Muestra')
+p3 = sp_data_final %>% dplyr::select(temp_quad) %>% 
+    ggplot(aes(sample = temp_quad - mean(temp_quad))) +
+    stat_qq(colour = '#00C5CD') +
+    stat_qq_line(lwd = 1, colour = '#E67F3E') +
+    labs(title =TeX(r'($\lambda = 2$)'),
+         x = 'Teórico',
+         y = 'Muestra')
+
+ggarrange(p1,
+          p2,
+          p3,
+          ncol = 3,
+          nrow = 1)
+
+```
+
+A partir de este análisis puede verse que utilizando $\lambda=0.5$ obtenemos la mejor
+normalización. Esto corresponde a una transformación de la forma $y=\sqrt{x}$.
+
+con esta transformación nuestros datos pasan a tener la distribución que se muestra
+en la siguiente figura.
+
+```{r, echo=FALSE, fig.cap = 'Histograma y diagrama q-q para los datos transformados',out.width='100%', fig.align='center'}
+p1 = sp_data_final %>% dplyr::select(temp) %>%
+    dplyr::mutate(temp = temp) %>%
+    ggplot(aes(x = temp)) + 
+    geom_histogram(aes(y=..density..), bins = 12, fill = '#00C5CD', colour = '#00C5CD') +
+    geom_density(lwd = 1, colour = '#E67F3E', fill = '#E67F3E', alpha = 0.25) +
+    labs(x = TeX(r'(\sqrt{Temperatura})'),
+         y = 'Densidad')
+p2 = sp_data_final %>% dplyr::select(temp) %>%
+    dplyr::mutate(temp = temp - mean(temp)) %>%
+    ggplot(aes(sample = temp)) +
+    stat_qq(colour = '#00C5CD') +
+    stat_qq_line(lwd = 1, colour = '#E67F3E') +
+    labs(x = 'Teórico',
+         y = 'Muestra')
+
+ggarrange(p1,
+          p2,
+          ncol = 2,
+          nrow = 1)
+
+```
+
+si bien no es posible normalizar en su totalidad de los datos, consideramos que con esta
+transformación podremos continuar con el análisis del efecto geoestadísitco en nuestro
+dataset.
+
 ## Descripción del problema y autocorrelación
 
 En un problema de estadística espacial nos interesa estudiar la varianza-covarianza de la
@@ -215,12 +339,30 @@ mide la autocorrelación entre un rango de valores que va de 0 a 2, dónde
 1 implica ausencia de correlación espacial y en los extremos tenemos
 correlación positiva y negativa, respectivamente. 
 
-$$
-\text{Indice Moran} = \frac{n}{(n-1)W_0S^2} \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij}(z(s_i)- \bar{z})(z(s_j)- \bar{z})
-$$
-$$
-\text{Estadístico }C\text{ Geary}  = \frac{1}{2W_0S^2} \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij}((z(s_i)-z(s_j))^2)
-$$
+\begin{equation}
+    \text{Indice Moran} = \frac{n}{(n-1)W_0S^2} \sum_{i=1}^{n} 
+        \sum_{j=1}^{n} w_{ij}(z(s_i)- \bar{z})(z(s_j) - \bar{z})
+\end{equation}
+
+
+\begin{equation}
+    \text{Estadístico }C\text{ Geary}  = \frac{1}{2W_0S^2} \sum_{i=1}^{n}
+        \sum_{j=1}^{n} w_{ij}((z(s_i)-z(s_j))^2)
+\end{equation}
+
+Con estos estadísticos vamos a generar las pruebas de hipótesis para Moran y Geary mediante
+los test respectivos, se muestran los resultados de los mismos abajo
+
+```{r s2.moran.table, echo=FALSE}
+moran_test
+```
+
+De igual manera visualizamos el resultado del test de Geary
+
+```{r s2.geary.table, echo=FALSE}
+geary_test
+```
+
 En una primera aproximación, tanto el *Índice de Moran* cómo el *Estadístico C de Geary* 
 son significativos con los siguientes p-valores `r moran_test$p.value` y `r geary_test$p.value`, 
 respectivamente con una distancia máxima de 3° para definir la cantidad de vecinos.
@@ -253,7 +395,7 @@ En el caso del problema provisto de temperaturas, el estadístico C de Geary con
 nos está hablando de una correlación positiva. Es decir, a puntos de alta temperatura le 
 corresponden puntos de alta temperatura a su alrededor, y lo mismo se espera con puntos de
 baja temperatura o temperatura media. Con el procedimiento de Moran Local procederemos a 
-ver cuáles son los puntos atípicos cuya disimilaridad es sigficativa. 
+ver cuáles son los puntos atípicos cuya disimilaridad es significativa. 
 
 $$
 IML_{Si} = \frac{z(Si)- \bar{z}}{S^2} \sum_{j=1 j \neq i}^{n}w_{ij}(z(s_j)- \bar{z})
@@ -311,7 +453,9 @@ Con ayuda de un *plot* podemos rápidamente observar si hay tendencia tanto en x
 y la normalidad de nuestro proceso:
 
 ```{r s3.data.definition, echo = F}
-d = sp_data_final_clean # guardamos el set de datos recortado en un objeto
+d = sp_data_final_clean %>%
+    dplyr::select(longitude,latitude,temp_sqrt) %>%
+    dplyr::rename("temp" = "temp_sqrt")
 coordinates(d) = ~longitude+latitude
 
 gd <- as.geodata(d) # lo pasamos a un objetivo geodata para poder graficarlo
@@ -469,20 +613,20 @@ resumen en la siguiente tabla:
 
 | Modelo         | Sill  | Range | Nugget | Kappa | SSErr |
 | :---:          | :---: | :---: | :---:  | :---: | :---: |
-| Exponencial    | 2.19  | 0.78  | 0      | -     |28.92  |    
-| Esférico       | 2.01  | 1.50  | 0      | -     |22.08  |
-| Bessel         | 2.10  | 0.42  | 0      | -     |16.08  |
-| Mattern        | 2.05  | 0.28  | 0      | 1.8   |14.03  |
-| Pentaspherical | 2.03  | 1.86  | 0      | -     |20.84  |
+| Exponencial    | 2.204 | 0.787  | 0      | -     | 31.565  |    
+| Esférico       | 2.025 | 1.513  | 0      | -     | 22.048  |
+| Bessel         | 2.111 | 0.431  | 0      | -     | 18.768  |
+| Mattern        | 2.065 | 0.280  | 0      | 1.85  | 16.389  |
+| Pentaspherical | 2.045 | 1.881  | 0      | -     | 23.189  |
 
 El modelo teórico que mejor se ajuste a nuestro modelo empírico será aquel que tenga menor
 error SSErr. En este caso, podemos elegir entre el *Mattern*, *Bessel* o el
 *Pentaspherical*. 
 
 ```{r s3.variog.fitting}
-vt_mat = fit.variogram(v_tend, vgm(2.05, "Mat", 0.28, 0, kappa = 1.8), fit.kappa = T)
-vt_bes = fit.variogram(v_tend, vgm(2.1, "Bes", 0.42, 0))
-vt_pen = fit.variogram(v_tend, vgm(2.03, "Pen", 1.86, 0))
+vt_mat = fit.variogram(v_tend, vgm(2.065, "Mat", 0.280, 0, kappa = 1.85), fit.kappa = T)
+vt_bes = fit.variogram(v_tend, vgm(2.111, "Bes", 0.431, 0))
+vt_pen = fit.variogram(v_tend, vgm(2.045, "Pen", 1.881, 0))
 
 ```
 
@@ -498,7 +642,6 @@ vg.mat.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
     geom_line(data = vt_mat_2,
               colour = 'blue',
               size = 1) +
-    ylim(0,3) +
     labs( x = 'Distance',
           y = 'Semivarianza',
           title = 'Mattern') +
@@ -511,7 +654,6 @@ vg.bes.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
     geom_line(data = vt_bes_2,
               colour = 'yellow',
               size = 1) +
-    ylim(0,3) +
     labs( x = 'Distance',
           y = 'Semivarianza',
           title = 'Bessel') +
@@ -524,7 +666,6 @@ vg.pen.plot <- v_tend %>% ggplot(aes(x = dist, y = gamma)) +
     geom_line(data = vt_pen_2,
               colour = 'green',
               size = 1) +
-    ylim(0,3) +
     labs( x = 'Distance',
           y = 'Semivarianza',
           title = 'Pentaspherical') +
@@ -538,11 +679,12 @@ vg.pen.plot
 
 
 Elegimos quedarnos con el modelo teórico *Mattern* y el *Esférico* para ajustar nuestro 
-variograma empírico. Ambos son los modelos que menos error presentan, descartamos *Bessel* y *Pentaspherical*. A su vez, nos quedamos con dos distribuciones para comparar sus 
+variograma empírico. Ambos son los modelos que menos error presentan, descartamos 
+*Bessel* y *Pentaspherical*. A su vez, nos quedamos con dos distribuciones para comparar sus 
 *performances* en la tarea de predicción.  
 
 ```{r output.fits, echo = F, message = F}
-vg.fit = fit.variogram(v_tend, vgm(2.01, "Sph", 1.50, 0))
+vg.fit = fit.variogram(v_tend, vgm(2.025, "Sph", 1.513, 0))
 
 vg.best.fit = vt_mat
 ```
@@ -550,14 +692,20 @@ vg.best.fit = vt_mat
 
 ```{r s4.init.datasets, echo = F, include = F}
 
-load('../data/spain_geodata_temperature_1989_spring.RData')
-load('../data/spain_preprocessed_data.RData')
+#load('data/spain_geodata_boxcox.RData')
+#load('data/spain_preprocessed_data_v2.RData')
 
 validation.data <- sp_data_bin
 sp_data_final_clean = sp_data_final_clean
 sp_geo_data_clean = sp_geo_data_clean
 
-sp_data_final_clean = sp_data_final_clean %>% dplyr::select(longitude,latitude,temp)
+sp_data_final_clean = sp_data_final_clean %>%
+    dplyr::select(longitude,latitude,temp_sqrt) %>%
+    dplyr::rename("temp" = "temp_sqrt")
+validation.data <- sp_data_bin %>%
+    dplyr::select(longitude,latitude,temp_sqrt) %>%
+    dplyr::rename("temp" = "temp_sqrt")
+
 
 coordinates(sp_data_final_clean) <- ~ longitude + latitude
 
@@ -576,25 +724,26 @@ del modelo de krigging
 
 ## Modelos propuestos de krigging ordinario
 
-Para nuestro dataset, debido a que observamos una dependencia clara entre nuestra variable
-de interés (Temperatura promedio en superficie) y la métrica espacial, no podemos dar
-por sentado que exista un modelo donde exista una media desconocida $\mu_0$ tal que nuestro
-sistema se pueda describir como $Z(s)=\mu+\epsilon(s)$.
+Para los datos propuestos, dado que vemos que existe una dependencia entre la temperatura
+promedio en superficie y la latitud, no podemos dar por sentado que existe una media 
+desconocida $\mu_0$ tal que nuestro sistema se pueda describir como 
+$Z(s)=\mu+\epsilon(s)$.
 
-Dada la tendencia observada se propone un modelo de krigging universal de la forma:
+Por ello, proponemos el uso de un modelo de krigging universal de la forma:
 
-$$
+\begin{equation}
 \left\{
     \begin{array}{rcl}
         Z(\mathbf{s}) & = & \mu(\mathbf{s})+\epsilon(\mathbf{s})\\
         \mu(\mathbf{s}) & = & \sum_{k}\beta_{k}f_{k}(\mathbf{s})
     \end{array}
-\right. \,\text{,where }\mathbf{s}\in\mathbb{R}^2
-$$
+\right. \,\text{, donde }\mathbf{s}\in(\text{latitud}, \text{longitud})
+\end{equation}
 
-donde en nuestro caso consideraremos una tendencia lineal que modele nuestro sistema. A
-partir de esto, considerando los dos modelos de variograma propuestos vamos a generar 
-dos modelos de krigging y comparar sus resultados. Recordamos que los variogramas elegidos
+donde en nuestro caso consideraremos una tendencia lineal entre la temperatura y la latiudad.
+A partir de esto, considerando los dos modelos de variograma propuestos vamos a generar 
+dos modelos de krigging y comparar sus resultados. 
+Recordamos que los variogramas elegidos
 son los siguientes:
 
 | Modelo | Nugget | Sill | Range | $\kappa$ |
@@ -603,17 +752,18 @@ son los siguientes:
 |`r as.character(vg.best.fit[2,]$model)` | 0 | `r vg.best.fit[2,]$psill` | `r vg.best.fit[2,]$range` | `r vg.best.fit[2,]$kappa` |
 
 Previo a generar los modelos de krigging, debemos generar la grilla de predicción, como 
-se dijo anteriormente tomaremos una grilla de tamaño 0.2x0.2 de esta manera estaremos
+se dijo anteriormente tomaremos una grilla de tamaño 0.2°x0.2° de esta manera estaremos
 cubriendo puntos que los datos inicialmente no tenían. Para determinar la grilla, primero
-obtenemos de nuestros datos los límites:
+debemos definir los límites de la grilla, para esto tomamos vemos los mínimos y máximos de
+las coordenadas del mapa de España:
 
 ```{r s4.data.summary, echo = F}
 summary(sp_geo_data_clean)
 ```
 
-Dado que si tomamos los límites máximos del _summary_  estaríamos considerando datos fuera
-de españa, con lo que vamos a definir un _boundary box_ de 1 punto menos en cada limite
-obtenido.
+Para minimizar la cantidad de puntos en la grilla que están fuera de España, vamos a definir
+como límites de la grilla 1° menos para la longitud y 0.5° menos para la latitud como se 
+muestra a continuación.
 
 ```{r grid.def}
 ## Una vez seleccionados los modelos vamos a crear una grilla de predicción
@@ -621,17 +771,33 @@ obtenido.
 
 g.lon.min = -8
 g.lon.max = 1
-g.lat.min = 37
-g.lat.max = 42
-
+g.lat.min = 36.5
+g.lat.max = 42.5
 
 grid.to.pred <- expand.grid(longitude = seq(g.lon.min, g.lon.max, by = 0.2),
                             latitude = seq(g.lat.min, g.lat.max, by	 = 0.2))
-gridded(grid.to.pred) <-  ~ longitude + latitude
+#View(grid.to.pred)
+#class(grid.to.pred)
+
+coordinates(grid.to.pred) <-  ~ longitude + latitude
+gridded(grid.to.pred) <-  TRUE
 ```
 
-A partir de esta grilla, tenemos ahora `r length(grid.to.pred)` puntos a predecir con
-nuestros modelos de krigging. Teniendo ya todo lo necesario podemos ajustar los modelos
+Con esto, ahora tendremos `r length(grid.to.pred)` puntos a predecir con
+nuestros modelos de krigging. Se puede ver en la siguiente figura la ubicación de la grilla
+generada ubicada respecto al mapa de España.
+
+```{r, echo = F, fig.cap = 'Ubicación grilla en mapa de España', fig.align='center'}
+ggplot() +
+    geom_sf(data = spain_shp$geom) +
+    geom_tile(data = as.data.frame(grid.to.pred),
+              aes(x = longitude, y = latitude),
+              colour = 'black',
+              alpha = 0) +
+    coord_sf(datum = st_crs(4326))
+```
+
+Teniendo ya todo lo necesario podemos ajustar los modelos
 correspondientes
 
 ```{r s4.krig.model, message = F}
@@ -679,47 +845,78 @@ A partir del krigging realizado sobre la grilla, obtenemos que nuestros datos pr
 tienen la siguiente distribución espacial:
 
 ```{r, echo = F, fig.cap = 'Resultados kriging universal para modelo Esférico', fig.align='center'}
-polys = as(krig.fit,"SpatialPolygonsDataFrame")
-polys_sf = as(polys, "sf")
-points_sf = as(krig.fit, "sf")
-dens.plot.1 <- ggplot(polys_sf) +
-    geom_sf(aes(fill = var1.pred)) +
-    ggtitle("Valores predichos [Sph]") +
-    coord_sf(datum=st_crs(4326)) +
-    scale_fill_viridis(option = "magma", direction = -1)
-dens.plot.2 <- ggplot(polys_sf) +
-    geom_sf(aes(fill = var1.var)) +
-    ggtitle("Varianza de valores predichos [Sph]") +
-    coord_sf(datum=st_crs(4326)) +
-    scale_fill_viridis(option = "magma", direction = 1)
+dens.plot.1 <- krig.fit %>% as.data.frame %>%
+    ggplot() +
+    geom_sf(data = spain_shp$geom,
+            alpha = 0.5,
+            colour = 'black',
+            size = 1) +
+    coord_sf(datum = st_crs(4326)) +
+    geom_tile(aes(fill = var1.pred,
+                  x = longitude,
+                  y = latitude),
+              alpha = 0.7) +
+    scale_fill_viridis(option = 'plasma', direction = -1) +
+    ggtitle("Valores predichos [Spherical]") +
+    theme_bw()
+dens.plot.2 <- krig.fit %>% as.data.frame %>%
+    ggplot() +
+    geom_sf(data = spain_shp$geom,
+            alpha = 0.5,
+            colour = 'black',
+            size = 1) +
+    coord_sf(datum = st_crs(4326)) +
+    geom_tile(aes(fill = var1.var,
+                  x = longitude,
+                  y = latitude),
+              alpha = 0.7) +
+    scale_fill_viridis(option = 'plasma', direction = 1) +
+    ggtitle("Varianza de valores predichos [Spherical]") +
+    theme_bw()
 
 ggarrange(dens.plot.1,
           dens.plot.2,
-          ncol = 1,
-          nrow = 2)
+          ncol = 2,
+          nrow = 1)
 ```
 
 Mientras que para segundo variograma propuesto
 
 ```{r, echo = F, fig.cap = 'Resultados kriging universal para modelo Matern', fig.align='center'}
-polys = as(krig.alt.fit,"SpatialPolygonsDataFrame")
-polys_sf = as(polys, "sf")
-points_sf = as(krig.alt.fit, "sf")
-dens.plot.1 <- ggplot(polys_sf) +
-    geom_sf(aes(fill = var1.pred)) +
+
+dens.plot.1 <- krig.alt.fit %>% as.data.frame %>%
+    ggplot() +
+    geom_sf(data = spain_shp$geom,
+            alpha = 0.5,
+            colour = 'black',
+            size = 1) +
+    coord_sf(datum = st_crs(4326)) +
+    geom_tile(aes(fill = var1.pred,
+                  x = longitude,
+                  y = latitude),
+              alpha = 0.7) +
+    scale_fill_viridis(option = 'plasma', direction = -1) +
     ggtitle("Valores predichos [Matern]") +
-    coord_sf(datum=st_crs(4326)) +
-    scale_fill_viridis(option = "magma", direction = -1)
-dens.plot.2 <- ggplot(polys_sf) +
-    geom_sf(aes(fill = var1.var)) +
+    theme_bw()
+dens.plot.2 <- krig.alt.fit %>% as.data.frame %>%
+    ggplot() +
+    geom_sf(data = spain_shp$geom,
+            alpha = 0.5,
+            colour = 'black',
+            size = 1) +
+    coord_sf(datum = st_crs(4326)) +
+    geom_tile(aes(fill = var1.var,
+                  x = longitude,
+                  y = latitude),
+              alpha = 0.7) +
+    scale_fill_viridis(option = 'plasma', direction = 1) +
     ggtitle("Varianza de valores predichos [Matern]") +
-    coord_sf(datum=st_crs(4326)) +
-    scale_fill_viridis(option = "magma", direction = 1)
+    theme_bw()
 
 ggarrange(dens.plot.1,
           dens.plot.2,
-          ncol = 1,
-          nrow = 2)
+          ncol = 2,
+          nrow = 1)
 ```
 
 
@@ -806,9 +1003,9 @@ for (k in k_vector){
 
 knn.err <- data.frame(k = k_vector, rmse_knn = k_error_vector, rmse_krig = kriging_error)
 
-knn.inter.fig <- knn.err %>% melt(id.vars = 'k') %>% ggplot(aes(x = k,
-                                                                y = value,
-                                                                colour = as.factor(variable))) +
+knn.inter.fig <- knn.err %>% 
+    melt(id.vars = 'k') %>%
+    ggplot(aes(x = k, y = value, colour = as.factor(variable))) +
     geom_line(size = 1) +
     labs( x = 'Cantidad de vecinos',
           y = 'RMSE de interpolación')

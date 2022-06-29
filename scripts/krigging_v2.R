@@ -37,7 +37,8 @@ validation.data <- sp_data_bin
 sp_data_final_clean = sp_data_final_clean
 sp_geo_data_clean = sp_geo_data_clean
 
-sp_data_final_clean = sp_data_final_clean %>% select(longitude,latitude,temp_sqrt)
+sp_data_final_clean = sp_data_final_clean %>% dplyr::select(longitude,latitude,temp_sqrt) %>% dplyr::rename("temp" = "temp_sqrt")
+validation.data <- sp_data_bin %>% dplyr::select(longitude,latitude,temp_sqrt) %>% dplyr::rename("temp" = "temp_sqrt")
 
 rm(sp_data, sp_data_bin, sp_data_final)
 
@@ -86,7 +87,7 @@ vg.fit.plot <- vg.emp %>% ggplot(aes(x = dist, y = gamma)) +
     geom_line(data = preds,
              colour = 'blue',
              size = 1) +
-    ylim(0,3) +
+    #ylim(0,3) +
     labs( x = 'Distance',
           y = 'Semivarianza') +
     theme_dark()
@@ -98,7 +99,7 @@ vg.fit.plot
 # Choosing the best variogram
 vg.fit.alternative = autofitVariogram(temp~longitude+latitude,
                              sp_data_final_clean,
-                             model = c("Exp", "Sph" ,"Gau" ,"Mat"),
+                             model = c("Exp", "Sph" ,"Gau" ,"Mat", "Bes", "Pen"),
                              kappa = seq(0,2,0.05),
                              fix.values = c(NA),
                              start_vals = c(0,1,2.5),
@@ -119,7 +120,7 @@ vg.altfit.plot <- vg.emp %>% ggplot(aes(x = dist, y = gamma)) +
     geom_line(data = preds,
               colour = 'blue',
               size = 1) +
-    ylim(0,3) +
+    #ylim(0,3) +
     labs( x = 'Distance',
           y = 'Semivarianza') +
     theme_dark()
@@ -208,7 +209,7 @@ krig.fit %>% as.data.frame %>%
                   x = longitude,
                   y = latitude),
               alpha = 0.7) +
-    scale_fill_viridis(option = 'magma') +
+    scale_fill_viridis(option = 'magma', direction = -1) +
     theme_bw()
 
 krig.alt.fit %>% as.data.frame %>%
@@ -222,7 +223,7 @@ krig.alt.fit %>% as.data.frame %>%
                   x = longitude,
                   y = latitude),
               alpha = 0.7) +
-    scale_fill_viridis(option = 'magma') +
+    scale_fill_viridis(option = 'magma', direction = -1) +
     theme_bw()
 
 
@@ -261,7 +262,7 @@ fig.comp.val.1 <- val.data %>% melt(id.vars = "original") %>% ggplot() +
 fig.comp.val.1
 
 
-kriging_error = sqrt(mean((validation.data$temp - krig.val.data$var1.pred)^2))
+kriging_error = sqrt(mean((validation.data$temp_sqrt - krig.val.data$var1.pred)^2))
 
 # K-nearest neighbours
 k_vector = seq(1, 20)

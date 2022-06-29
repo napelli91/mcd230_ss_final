@@ -42,7 +42,9 @@ bc2 <- boxcoxfit(sp_data_final$temp, lambda2 = F)
 
 
 
-bcfit = boxcox(lm(sp_data_final$temp ~ 1),lambda = seq(-3,5,0.05))
+bcfit = boxcox(lm(sp_data_final$temp ~ 1),
+               lambda = seq(-0.5,2.5,0.01),
+               plotit = T)
 bcfit
 
 lambda <- bcfit$x[which.max(bcfit$y)]

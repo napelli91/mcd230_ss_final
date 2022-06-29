@@ -114,7 +114,10 @@ Cómo se mencionó antes, se decidió tomar la primavera de 1989 para poder elim
 componente temporal de nuestro proceso estocástico y centrarnos solo en el análisis 
 espacial. Para poder realizar este filtrado, primero debemos entender la naturaleza de los
 datos, el formato de los datos obtenidos es de una grilla que se obtuvo de aplicar una 
-proyección Equirectangular sobre el área cubierta mencionada anteriormente. Es decir, dado que los datos son del continente europeo se recortaron las coordenadas correspondientes al territorio continental de España. Además, el dataset divide los datos en las cuatro estaciones del año, nosotros nos quedamos con la primavera.   
+proyección Equirectangular sobre el área cubierta mencionada anteriormente. Es decir,
+dado que los datos son del continente europeo se recortaron las coordenadas correspondientes 
+al territorio continental de España. Además, el dataset divide los datos en las cuatro estaciones
+del año, nosotros nos quedamos con la primavera.   
 
 > Spain Boundary box
 > 
@@ -122,11 +125,17 @@ proyección Equirectangular sobre el área cubierta mencionada anteriormente. Es
 >
 > Lat: 35.61, 43.99
 
-Se extrae entonces del archivo GDX la grilla (matrix) completa de 70x130, que van a representar 9100 puntos correspondientes al continente europeo, en el año y estación mencionada. Estos datos se guardan en formato csv para que luego se puedan trabajar en R para su posterior procesamiento.
+Se extrae entonces del archivo GDX la grilla (matrix) completa de 70x130, que van a representar
+9100 puntos correspondientes al continente europeo, en el año y estación mencionada. Estos
+datos se guardan en formato csv para que luego se puedan trabajar en R para su posterior procesamiento.
 
-El archivo csv se filtra inicialmente de los valores _NaN_, dado que por construcción el dataset original tiene los cuerpos de agua con una referencia de _NaN_ o -999.99. Ese valor no tiene información alguna para nuestro análisis, entonces los retiramos. Luego de ello vamos a filtrar el área correspondiente para la segmentación del territorio Español. 
+El archivo csv se filtra inicialmente de los valores _NaN_, dado que por construcción el dataset
+original tiene los cuerpos de agua con una referencia de _NaN_ o -999.99. Ese valor no tiene
+información alguna para nuestro análisis, entonces los retiramos. Luego de ello vamos a filtrar
+el área correspondiente para la segmentación del territorio Español. 
 
-Se quitaron de la grilla los puntos pertenecientes a otros países. Para esto utilizamos un _shp_ de España e iterativamente se fueron removiendo los puntos externos al país.
+Se quitaron de la grilla los puntos pertenecientes a otros países. Para esto utilizamos un _shp_
+de España e iterativamente se fueron removiendo los puntos externos al país.
 
 ```{r, echo = F, fig.align='center', fig.cap='Representación de los datos en el dataset', out.width='140%'}
 knitr::include_graphics('./content/figs/1_2_arial_data.png')
@@ -400,9 +409,12 @@ plot(nube_clasica)
 ```
 
 
-En este punto, vemos que los variogramas ejecutados con ambos paquetes *variog (geoR)* y *variogram (gstat)* tienen una forma funcional similar (aunque no la magnitud), lo cual es una buena señal.
+En este punto, vemos que los variogramas ejecutados con ambos paquetes *variog (geoR)* y
+*variogram (gstat)* tienen una forma funcional similar (aunque no la magnitud), lo cual es 
+una buena señal.
 
-Con este variograma nube vemos que a partir de un **h=8** se comienza a ver la meseta, corroborando nuevamente nuestras conclusiones de la sección anterior.
+Con este variograma nube vemos que a partir de un **h=8** se comienza a ver la meseta,
+corroborando nuevamente nuestras conclusiones de la sección anterior.
 Esto nos indica que en las máximas distancias la varianza es la menor posible, lo cual
 tiene sentido ya que los puntos más alejados en el país de España son los que tienen mar
 alrededor, el cual conserva medianamente la misma temperatura. 
@@ -531,7 +543,9 @@ vg.pen.plot
 
 
 Elegimos quedarnos con el modelo teórico *Mattern* y el *Esférico* para ajustar nuestro 
-variograma empírico. Ambos son los modelos que menos error presentan, descartamos *Bessel* y *Pentaspherical*. A su vez, nos quedamos con dos distribuciones para comparar sus 
+variograma empírico. Ambos son los modelos que menos error presentan, 
+descartamos *Bessel* y *Pentaspherical*. A su vez, nos quedamos con dos 
+distribuciones para comparar sus 
 *performances* en la tarea de predicción.  
 
 ```{r output.fits, echo = F, message = F}
@@ -570,7 +584,8 @@ del modelo de krigging
 ## Modelos propuestos de krigging ordinario
 
 Para nuestro dataset, se observa una dependencia clara entre nuestra variable
-de interés (Temperatura promedio en superficie) y las coordenadas de latitud y longitud, en dónde nos encontramos en un proceso con tendencia que no es estacionario.
+de interés (Temperatura promedio en superficie) y las coordenadas de latitud y longitud, en
+dónde nos encontramos en un proceso con tendencia que no es estacionario.
 
 Dada la tendencia observada se propone un modelo de krigging universal de la forma:
 
@@ -603,8 +618,11 @@ summary(sp_geo_data_clean)
 ```
 
 Dado que si tomamos los límites máximos del _summary_  estaríamos considerando datos fuera
-de españa, con lo que vamos a definir un _boundary box_ de 1 grado menos en cada limite
+de españa, con lo que vamos a definir una grilla de 1° menos en cada limite
 obtenido aproximadamente.
+
+> Agregar Grafico de shp y grilla
+
 
 ```{r grid.def}
 ## Una vez seleccionados los modelos vamos a crear una grilla de predicción
@@ -772,7 +790,8 @@ estaremos viendo puntos intermedios entre nuestro puntos iniciales que quizás n
 suficiente información para asumir su valor. 
 
 Por esto, proponemos evaluar primeramente el resultado obtenido si se hubiese utilizado
-a KNN como método de interpolación de los datos, a modo de tener una validación cruzada o modelo base con quién competir. Veremos como se comporta el RMSE de este
+a KNN como método de interpolación de los datos, a modo de tener una validación cruzada o
+modelo base con quién competir. Veremos como se comporta el RMSE de este
 método en función de la cantidad de vecinos a considerar en la interpolación.
 
 ```{r s4.knn.interpol, warning = F}
